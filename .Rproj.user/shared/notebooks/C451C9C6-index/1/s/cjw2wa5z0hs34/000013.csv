@@ -1,2 +1,0 @@
-"0","glass_df <- glass_df %>% "
-"0","  select(-Id_number)"

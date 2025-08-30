@@ -1,5 +1,0 @@
-"0","# Retirada das colunas fundamentais "
-"0","bean_df <- bean_df %>% "
-"0","  select(-c(""MinorAxisLength"", ""MajorAxisLength"", ""Area"", ""Perimeter"", ""ConvexArea""))"
-"0",""
-"0",""

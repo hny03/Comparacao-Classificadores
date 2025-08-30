@@ -1,5 +1,0 @@
-"0","glass_df_pad <- glass_df %>% "
-"0","  mutate(across(c(""RI"",""Na"",""Mg"",""Al"",""Si"",""K"",""Ca"",""Ba"",""Fe""), padronization_norm))"
-"0",""
-"0","glass_df_pad %>% "
-"0","  select(-Class)"

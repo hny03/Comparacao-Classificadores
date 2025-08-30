@@ -1,5 +1,0 @@
-"0","glass_df_res <- glass_df %>% "
-"0","  mutate(across(c(""RI"",""Na"",""Mg"",""Al"",""Si"",""K"",""Ca"",""Ba"",""Fe""), min_max_normalization))"
-"0",""
-"0","glass_df_res %>% "
-"0","  select(-Class)"
