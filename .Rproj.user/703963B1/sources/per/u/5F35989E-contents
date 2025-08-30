@@ -1,0 +1,75 @@
+library(readxl)
+library(data.table)
+library(ggplot2)
+library(dplyr)
+
+
+
+
+# 1) Ler o arquivo Excel como tibble/data.frame
+bean_df <- read_excel("Dry_Bean_Dataset.xlsx")
+bean_df <- as.data.table(bean_df)   # se quiser table/dt
+
+df <- bean_df %>% 
+  group_by(Class)%>% 
+  count(n())
+
+library(ggplot2)
+ggplot(df, aes(x = Class, y = n, fill = Class)) +
+  geom_col() +
+  labs(title = "Distribuição das Classes de Feijão",
+       x = "Classe",
+       y = "Frequência") +
+  theme_minimal()
+
+
+
+
+
+
+
+
+# 2) Ler o arquivo .data como tabela
+# Se for separado por vírgula:
+glass_df <- fread("glass.data", sep = ",", header = FALSE)
+
+colnames(glass_df) <- c(
+  "Id",
+  "RI",  # V2
+  "Na",               # V3
+  "Mg",               # V4
+  "Al",               # V5
+  "Si",               # V6
+  "K",                # V7
+  "Ca",               # V8
+  "Ba",               # V9
+  "Fe",               # V10
+  "Class"             # V11
+)
+
+unique(glass_df$Class)
+
+
+df <- glass_df %>% 
+  group_by(Class)%>% 
+  count(n()) %>% 
+  mutate(Class = recode(Class,
+                        `1` = "Janelas de edifícios (float)",
+                        `2` = "Janelas de edifícios (não-float)",
+                        `3` = "Janelas de veículos (float)",
+                        `4` = "Janelas de veículos (não-float)",   # não há amostras
+                        `5` = "Recipientes",
+                        `6` = "Utensílios de mesa",
+                        `7` = "Faróis"
+  )) 
+
+
+
+ggplot(df, aes(x = Class, y = n, fill = Class)) +
+  geom_col() +
+  labs(title = "Distribuição das Classes de Vidro",
+       x = "Classe",
+       y = "Frequência") +
+  theme_minimal()
+
+

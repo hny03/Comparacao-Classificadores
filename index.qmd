@@ -1,0 +1,320 @@
+---
+title: "regressao logistica"
+format: html
+editor: visual
+---
+
+```{r}
+library(readxl)
+library(data.table)
+library(ggplot2)
+library(dplyr)
+```
+
+# 1. Introdução e Objetivos
+
+A área de Ciência de Dados tem se mostrado fundamental para a extração de conhecimento e suporte à tomada de decisão a partir de grandes volumes de dados. Dentro deste campo, a classificação supervisionada se destaca como uma das tarefas mais comuns e importantes, permitindo a categorização de novos dados em classes pré-definidas com base em um conjunto de dados previamente rotulado. A escolha do algoritmo de classificação e seu correto ajuste são etapas cruciais que impactam diretamente o desempenho e a precisão do modelo final.
+
+Este trabalho, realizado no âmbito da disciplina de Ciência de Dados, tem como objetivo principal aplicar, avaliar e interpretar o desempenho de diferentes algoritmos de classificação supervisionada. Para isso, serão utilizadas duas bases de dados públicas com características distintas: o *Dry Bean Dataset* e o *Glass Identification Dataset*.
+
+# 2. Descrição das Bases de Dados
+
+Para a realização deste estudo, foram selecionadas duas bases de dados públicas, que são descritas a seguir.
+
+## 2.1. Dry Bean Dataset
+
+Esta base de dados foi obtida a partir de um estudo que utilizou um sistema de visão computacional para extrair características de imagens de grãos de feijão. O objetivo é classificar os grãos em sete variedades diferentes.
+
+-   Link para a fonte: <https://www.kaggle.com/datasets/joebeachcapital/dry-beans>
+
+-   Descrição Geral:
+
+-   Número de Instâncias: 13.611.
+
+-   Número de Atributos: 17 (16 atributos previsores e 1 atributo classe).
+
+-   Atributo Classe: *Class* (contendo 7 tipos de feijão: *Barbunya, Bombay, Cali, Dermason, Horoz, Seker* e *Sira*).
+
+-   Valores Ausentes: A base de dados não possui valores ausentes.
+
+-   Tipos de Atributos: Os atributos são numéricos (inteiros e reais), representando medidas extraídas das imagens dos grãos, como área, perímetro, comprimento dos eixos principal e menor, e outros fatores de forma. Sendo eles:
+
+    -   Área (A): A área de um feijão e o número de pixels dentro de seus limites. à Contínuo
+
+    -   Perímetro (P): Tamanho da borda do feijão. à Contínuo
+
+    -   Comprimento do eixo principal (L): Definido pela distância das extremidades da linha mais longa a ser desenhada a partir de um feijão. à Contínuo
+
+    -   Comprimento do eixo menor (l): Definido pela linha mais longa que pode ser traçada a partir do feijão, mantendo-se perpendicular ao eixo principal. à Contínuo
+
+    -   Proporção (K): Define a relação entre os atributos L e l. à Contínuo
+
+    -   Excentricidade (Ec): Excentricidade da elipse que possui os mesmos momentos da região. à Contínuo
+
+    -   Área convexa (C): Número de pixels no menor polígono convexo capaz de conter a área da semente de feijão. à Discreto
+
+    -   Diâmetro equivalente (Ed): Diâmetro de um círculo que possui a mesma área que a área da semente de feijão. à Contínuo
+
+    -   Extensão (Ex): Razão entre o número de pixels do retângulo delimitador e a área da semente. à Contínuo
+
+    -   Solidez (S): Também conhecido como convexidade. É a razão entre o número de pixels na casca convexa e os encontrados na semente. à Contínuo
+
+    -   Circularidade (R): Quão circular é a forma, calculada pela fórmula que utiliza área (A) e perímetro (P). à Contínuo
+
+        -   R=(4πA)/ P2
+
+    -   Compacidade (CO): Mede o grau de arredondamento de um objeto, definido pela fórmula que une diâmetro (Ed) e maior eixo (L). à Contínuo
+
+        -   CO = Ed/L
+
+    -   Fator de Forma 1 (SF1), Fator de Forma 2 (SF2), Fator de Forma 3 (SF3), Fator de Forma 4 (SF4): Representam diferentes combinações matemáticas de área, perímetro e diâmetro para caracterizar a forma da semente. à Contínuo 
+
+    -   Classe: Categoria da semente de feijão (S*eker, Barbunya, Bombay, Cali, Dermosan, Horoz* e *Sira*). à Categórico
+
+Observando os dados da classe, é perceptível um desbalanceamento entre as categorias de feijão, sendo a classe *Dermason* a de maior peso. Em contrapartida, a classe *Bombay* se encontra em desvantagem, por ter a menor das representações.
+
+```{r}
+library(ggplot2)
+
+bean_df <- read_excel("Dry_Bean_Dataset.xlsx")
+bean_df <- as.data.table(bean_df)   # se quiser table/dt
+
+df <- bean_df %>% 
+  group_by(Class)%>% 
+  count(n())
+
+ggplot(df, aes(x = Class, y = n, fill = Class)) +
+  geom_col() +
+  labs(title = "Distribuição das Classes de Feijão",
+       x = "Classe",
+       y = "Frequência") +
+  theme_minimal()
+```
+
+## 2.2. Glass Identification Dataset
+
+Esta base de dados foi criada para investigações de ciência forense, onde fragmentos de vidro encontrados em cenas de crime podem ser usados como evidência se corretamente identificados. A classificação se baseia na composição química do vidro.
+
+-   Link para a fonte: <https://archive.ics.uci.edu/dataset/42/glass+identification>
+
+-   Descrição Geral:
+
+-   Número de Instâncias: 214.
+
+-   Número de Atributos: 11 (10 atributos previsores e 1 atributo classe).
+
+-   Atributo Classe: *Type_of_glass* (com 7 tipos possíveis, embora um deles não tenha instâncias na base, resultando em 6 classes efetivas).
+
+-   Valores Ausentes: A base de dados não possui valores ausentes.
+
+-   Tipos de Atributos: Os atributos são numéricos contínuos, representando o índice de refração (RI) e a porcentagem em peso de óxidos de diferentes elementos químicos (Sódio, Magnésio, Alumínio, etc.). Sendo eles:
+
+    -   Id_number: número identificador. à Discreto
+
+    -   RI: Índice de refração. à Contínuo
+
+    -   Na: Percentual em peso de sódio. à Contínuo
+
+    -   Mg: Percentual em peso de magnésio. à Contínuo
+
+    -   Al: Percentual em peso de alumínio. à Contínuo
+
+    -   Si: Percentual em peso de silício. à Contínuo
+
+    -   K: Percentual em peso de potássio. à Contínuo
+
+    -   Ca: Percentual em peso de cálcio. à Contínuo
+
+    -   Ba: Percentual em peso de bário. à Contínuo
+
+    -   Fe: Percentual em peso de ferro. à Contínuo
+
+    -   Classe:
+
+1.  Janelas de edifícios - *float*
+
+2.  Janelas de edifícios - não *float*
+
+3.  Janelas de veículos - *float*
+
+4.  Janelas de veículos - não *float* (sem amostras na base)
+
+5.  Recipientes
+
+6.  Utensílios de mesa
+
+7.  Faróis de veículos
+
+**Nota:** O termo “*float*” se refere à técnica de produção do vidro, onde uma camada fundida é nivelada sobre um banho de metal líquido que resulta num vidro uniforme e de superfície regular. Seu diferencial em relação ao método de “não *float*” está no índice de refração do material.
+
+A base escolhida é desbalanceada, não contendo representação da classe 4 (janelas de veículos não *float*), e contendo discrepâncias de representação das demais classes, como ilustra o gráfico.
+
+```{r}
+glass_df <- fread("glass.data", sep = ",", header = FALSE)
+colnames(glass_df) <- c(
+  "Id_number",
+  "RI",  # V2
+  "Na",               # V3
+  "Mg",               # V4
+  "Al",               # V5
+  "Si",               # V6
+  "K",                # V7
+  "Ca",               # V8
+  "Ba",               # V9
+  "Fe",               # V10
+  "Class"             # V11
+)
+
+df <- glass_df %>% 
+  group_by(Class)%>% 
+  count(n()) %>% 
+  mutate(Class = recode(Class,
+                        `1` = "Janelas de edifícios (float)",
+                        `2` = "Janelas de edifícios (não-float)",
+                        `3` = "Janelas de veículos (float)",
+                        `4` = "Janelas de veículos (não-float)",   # não há amostras
+                        `5` = "Recipientes",
+                        `6` = "Utensílios de mesa",
+                        `7` = "Faróis"
+  )) 
+
+
+
+ggplot(df, aes(x = Class, y = n, fill = Class)) +
+  geom_col() +
+  labs(title = "Distribuição das Classes de Vidro",
+       x = "Classe",
+       y = "Frequência") +
+  theme_minimal()
+
+```
+
+# 3.Pré processamento
+
+### *3.1 Dry Bean Dataset*
+
+Na base Dry Beans, que contém 13.611 instâncias e 16 atributos numéricos derivados de medidas geométricas das sementes, foram aplicadas três etapas principais de pré-processamento: amostragem, redução de dimensionalidade e transformação de variáveis.
+
+A amostragem foi considerada na base Dry Beans devido ao grande número de instâncias (13.611), permitindo reduzir o custo computacional durante os experimentos e possibilitando a execução de testes preliminares com subconjuntos menores de dados, garantindo maior eficiência na comparação entre classificadores. Optou-se pela amostragem estratificada, de modo a preservar as proporções originais das sete classes de feijões no subconjunto selecionado, o que se mostra essencial diante do desbalanceamento existente entre as classes, já que algumas variedades possuem muito mais instâncias que outras. Assim, essa estratégia assegura que o conjunto reduzido de dados mantenha a diversidade e representatividade necessárias para uma avaliação consistente do desempenho dos algoritmos de classificação.
+
+#### 3.1.1. Redução de dimensionalidade
+
+Na redução de dimensionalidade, observou-se que diversos atributos da base são derivados de outros já existentes, apresentando, portanto, redundância. Por exemplo, o atributo *AspectRatio* é calculado a partir da razão entre *MajorAxisLength* e *MinorAxisLength*, enquanto *Roundness* e *Compactness* utilizam *Area* e *Perimeter* em suas fórmulas. Dessa forma, optou-se por manter os atributos derivados e remover os fundamentais. Essa abordagem preserva a informação essencial em métricas normalizadas e reduz a redundância entre variáveis, conforme ilustrado na tabela apresentada nesta seção.
+
+```{r}
+# Retirada das colunas fundamentais 
+bean_df <- bean_df %>% 
+  select(-c("MinorAxisLength", "MajorAxisLength", "Area", "Perimeter", "ConvexArea"))
+
+
+```
+
+#### 3.1.2. Normalização 
+
+Por fim, aplicou-se a transformação de variáveis por meio da normalização de todos os atributos. Essa etapa é essencial em algoritmos baseados em medidas de distância, uma vez que os atributos possuem escalas distintas (por exemplo, área com valores elevados em comparação a razões adimensionais como *AspectRatio*). A normalização garante que todos os atributos contribuam de forma equivalente no processo de classificação, evitando que variáveis com maior amplitude dominem o resultado final. Assim, foram normalizados os seguintes atributos: *AspectRation, Eccentricity, EquivalentDiameter, Extent, Solidity, Roundness, Compactness, ShapeFactor1, ShapeFactor2, ShapeFactor3* e *ShapeFactor4.*
+
+##### (min-max)
+
+```{r}
+min_max_normalization <- function(x) {
+  return ((x - min(x)) / (max(x) - min(x)))
+}
+
+# Aplicando normalização (re-escala) nas colunas numéricas
+bean_df_res <- bean_df %>% 
+  mutate(across(c("AspectRation", "Eccentricity", "EquivDiameter", "Extent", "Solidity", "roundness", "Compactness", "ShapeFactor1", "ShapeFactor2", "ShapeFactor3", "ShapeFactor4"), min_max_normalization))
+
+bean_df_res %>% 
+  select(
+    AspectRation, 
+    Eccentricity, 
+    EquivDiameter, 
+    Extent, 
+    Solidity, 
+    roundness, 
+    Compactness, 
+    ShapeFactor1, 
+    ShapeFactor2, 
+    ShapeFactor3, 
+    ShapeFactor4
+  )
+
+
+```
+
+##### Padronização
+
+Além disso, para a aplicação específica da regressão logística, optou-se pela utilização da técnica de padronização, que transforma cada atributo de modo que sua média seja zero e seu desvio padrão igual a um. Essa padronização é mais adequada para algoritmos baseados em gradiente, como a regressão logística, pois assegura maior estabilidade numérica e favorece a convergência do processo de otimização, permitindo que os coeficientes estimados sejam mais consistentes mesmo em cenários de atributos correlacionados.
+
+```{r}
+padronization_norm <- function(x){
+  return((x-mean(x))/sd(x))
+}
+
+# Aplicando normalização (padronização) nas colunas numéricas
+bean_df_pad <- bean_df %>% 
+  mutate(across(c("AspectRation", "Eccentricity", "EquivDiameter", "Extent", "Solidity", "roundness", "Compactness", "ShapeFactor1", "ShapeFactor2", "ShapeFactor3", "ShapeFactor4"), padronization_norm))
+
+bean_df_pad %>% 
+  select(
+    AspectRation, 
+    Eccentricity, 
+    EquivDiameter, 
+    Extent, 
+    Solidity, 
+    roundness, 
+    Compactness, 
+    ShapeFactor1, 
+    ShapeFactor2, 
+    ShapeFactor3, 
+    ShapeFactor4
+  )
+
+
+```
+
+### *3.2 Glass Identification Dataset*
+
+Na base Glass Identification, composta por 214 instâncias e 9 atributos numéricos, foram aplicadas duas etapas principais de pré-processamento: seleção de atributos e transformação de variáveis.
+
+#### 3.2.1. Seleção de atributos
+
+Na seleção de atributos, foi realizada a remoção do campo *Id_number*, uma vez que esse atributo não possui relevância para a classificação e poderia introduzir ruído no modelo.
+
+```{r}
+glass_df <- glass_df %>% 
+  select(-Id_number)
+```
+
+#### 3.1.2. Normalização
+
+##### (min-max)
+
+Na etapa de transformação de variáveis (para os algoritmos Árvore de Decisão e KNN),
+aplicou-se a técnica de normalização Min–Max, que reescala os atributos para o
+intervalo \[0,1\]. Essa abordagem foi escolhida devido à diferença de escalas
+entre os atributos numéricos — por exemplo, o índice de refração (RI) varia em
+torno de 1,5 a 1,8, enquanto a concentração de sódio (Na) varia entre 10 e 17.
+O reescalonamento assegura que todos os atributos contribuam de maneira
+proporcional nos algoritmos de classificação baseados em distância, evitando
+que variáveis de maior amplitude dominem o processo de decisão.
+
+```{r}
+glass_df_res <- glass_df %>% 
+  mutate(across(c("RI","Na","Mg","Al","Si","K","Ca","Ba","Fe"), min_max_normalization))
+
+glass_df_res %>% 
+  select(-Class)
+```
+
+##### Padronização
+
+Para o algoritmo de regressão logística, utilizou-se a técnica depadronização como forma de normalização.
+
+```{r}
+glass_df_pad <- glass_df %>% 
+  mutate(across(c("RI","Na","Mg","Al","Si","K","Ca","Ba","Fe"), padronization_norm))
+
+glass_df_pad %>% 
+  select(-Class)
+```
