@@ -9,6 +9,7 @@ library(readxl)
 library(data.table)
 library(ggplot2)
 library(dplyr)
+library(nnet)
 ```
 
 # 1. Introdução e Objetivos
@@ -89,6 +90,8 @@ ggplot(df, aes(x = Class, y = n, fill = Class)) +
        x = "Classe",
        y = "Frequência") +
   theme_minimal()
+
+
 ```
 
 ## 2.2. Glass Identification Dataset
@@ -201,11 +204,27 @@ A amostragem foi considerada na base Dry Beans devido ao grande número de inst�
 
 ```{r}
 # Amostragem estratificada
-n_por_classe <- 500 # Número de instâncias por classe a serem utilizadas
-bean_df_bal <- bean_df_res %>%
-    group_by(.data[[target_col]]) %>%
-    slice_sample(n = min(n_por_classe, dplyr::n())) %>%  # evita erro se classe menor
+
+frac_global <- 0.03  # define o tamanho da partição para 3% do dataset
+
+bean_df_bal <- bean_df %>%
+  group_by(Class) %>% 
+  slice_sample(prop = frac_global) %>% # realiza a partiçao da amostragem
   ungroup()
+
+
+# Garantia de manutenção das proporções
+df <- bean_df_bal %>% 
+  group_by(Class)%>% 
+  count(n())
+
+ggplot(df, aes(x = Class, y = n, fill = Class)) +
+  geom_col() +
+  labs(title = "Distribuição das Classes de Feijão",
+       x = "Classe",
+       y = "Frequência") +
+  theme_minimal()
+
 ```
 
 #### 3.1.2. Redução de dimensionalidade
@@ -214,7 +233,7 @@ Na redução de dimensionalidade, observou-se que diversos atributos da base sã
 
 ```{r}
 # Retirada das colunas fundamentais 
-bean_df <- bean_df %>% 
+bean_df_bal <- bean_df_bal %>% 
   select(-c("MinorAxisLength", "MajorAxisLength", "Area", "Perimeter", "ConvexArea"))
 
 
@@ -232,7 +251,7 @@ min_max_normalization <- function(x) {
 }
 
 # Aplicando normalização (re-escala) nas colunas numéricas
-bean_df_res <- bean_df %>% 
+bean_df_res <- bean_df_bal %>% 
   mutate(across(c("AspectRation", "Eccentricity", "EquivDiameter", "Extent", "Solidity", "roundness", "Compactness", "ShapeFactor1", "ShapeFactor2", "ShapeFactor3", "ShapeFactor4"), min_max_normalization))
 
 bean_df_res %>% 
@@ -263,7 +282,7 @@ padronization_norm <- function(x){
 }
 
 # Aplicando normalização (padronização) nas colunas numéricas
-bean_df_pad <- bean_df %>% 
+bean_df_pad <- bean_df_res %>% 
   mutate(across(c("AspectRation", "Eccentricity", "EquivDiameter", "Extent", "Solidity", "roundness", "Compactness", "ShapeFactor1", "ShapeFactor2", "ShapeFactor3", "ShapeFactor4"), padronization_norm))
 
 bean_df_pad %>% 
@@ -351,14 +370,14 @@ bean_df_res[[target_col]] <- as.factor(bean_df_res[[target_col]]) # Garante que 
 split_ratio <- 0.66 # Define o tamanho da partição
 
 # Índices por classe
-idx_treino <- bean_df_bal %>%
+idx_treino <- bean_df_res %>%
   mutate(row_id = dplyr::row_number()) %>%
   group_by(.data[[target_col]]) %>%
   slice_sample(prop = split_ratio) %>% # Realiza a partição da base para treino e teste
   pull(row_id)
 
-train_df <- bean_df_bal[idx_treino, ]
-test_df  <- bean_df_bal[-idx_treino, ]
+train_df <- bean_df_res[idx_treino, ]
+test_df  <- bean_df_res[-idx_treino, ]
 
 # Matriz de preditores (x) e vetores de classe (y)
 X_train <- train_df %>% select(-all_of(target_col)) %>% as.data.frame()
@@ -445,7 +464,85 @@ acc_k
 
 ### 5.3.1. Dry Bean Dataset
 
+```{r}
+set.seed(123)
+
+head(bean_df_pad)
+
+# Definido partição de treino
+
+split_ratio <- 0.66 # Define o tamanho da partição
+
+idx_treino <- bean_df_pad %>%
+  group_by(Class) %>%
+  slice_sample(prop = split_ratio) # Realiza a partição da base para treino e teste
+
+idx_teste <- bean_df_pad %>% 
+  anti_join(idx_treino)
+ 
+
+
+model <- multinom(Class ~ AspectRation + Eccentricity + EquivDiameter + Extent + Solidity + roundness + Compactness + ShapeFactor1 + ShapeFactor2 + ShapeFactor3 + ShapeFactor4, data = idx_treino)
+
+summary(model)
+
+coefs <- summary(model)$coefficients
+erros <- summary(model)$standard.errors
+
+# Calcular estatísticas z e p-valores
+z_values <- coefs / erros
+p_values <- 2 * (1 - pnorm(abs(z_values)))  # Teste bilateral
+
+# Mostrar os p-valores
+print(p_values)
+
+prediction <- predict(model, newdata = idx_teste)
+
+idx_teste$Class
+
+head(prediction)
+```
+
 ### 5.3.2. Glass Identification Dataset
+
+```{r}
+set.seed(123)
+
+head(glass_df_pad)
+
+# Definido partição de treino
+
+split_ratio <- 0.66 # Define o tamanho da partição
+
+idx_treino <- glass_df_pad %>%
+  group_by(Class) %>%
+  slice_sample(prop = split_ratio) # Realiza a partição da base para treino e teste
+
+idx_teste <- glass_df_pad %>% 
+  anti_join(idx_treino)
+ 
+
+
+model <- multinom(Class ~ RI + Na + Mg + Al + Si + K + Ca + Ba + Fe, data = idx_treino)
+
+summary(model)
+
+coefs <- summary(model)$coefficients
+erros <- summary(model)$standard.errors
+
+# Calcular estatísticas z e p-valores
+z_values <- coefs / erros
+p_values <- 2 * (1 - pnorm(abs(z_values)))  # Teste bilateral
+
+# Mostrar os p-valores
+print(p_values)
+
+prediction <- predict(model, newdata = idx_teste)
+
+idx_teste$Class
+
+head(prediction)
+```
 
 # 6. Estratégia da Divisão da Base de Dados
 

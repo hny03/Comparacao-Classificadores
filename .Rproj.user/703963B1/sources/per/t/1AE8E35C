@@ -1,9 +1,9 @@
 {
     "id": "1AE8E35C",
-    "path": "~/UFU/CienciaDeDados/trabalho_final/index.qmd",
+    "path": "~/UFU/CienciaDeDados/Comparacao_classificadores/Comparacao-Classificadores/index.qmd",
     "project_path": "index.qmd",
     "type": "quarto_markdown",
-    "hash": "1263114768",
+    "hash": "1193274233",
     "contents": "",
     "dirty": false,
     "created": 1756518025989.0,
@@ -19,14 +19,14 @@
         "scrollLine": "0",
         "docOutlineVisible": "1",
         "rmdVisualCollapsedChunks": "",
-        "rmdVisualModeLocation": "11904:7436.6669921875"
+        "rmdVisualModeLocation": "10636:4826.66650390625"
     },
     "folds": "",
-    "lastKnownWriteTime": 1756522421,
+    "lastKnownWriteTime": 1756679159,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1756522447786,
+    "last_content_update": 1756679159,
     "read_only": false,
     "read_only_alternatives": []
 }
