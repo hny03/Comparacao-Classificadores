@@ -2,3 +2,641 @@
 title: "trabalho"
 format: html
 ---
+
+```{r}
+library(readxl)
+library(data.table)
+library(ggplot2)
+library(dplyr)
+library(nnet)
+library(rpart)
+library(caret)
+library(class)
+```
+
+# 1. Introdução e Objetivos
+
+A área de Ciência de Dados tem se mostrado fundamental para a extração de conhecimento e suporte à tomada de decisão a partir de grandes volumes de dados. Dentro deste campo, a classificação supervisionada se destaca como uma das tarefas mais comuns e importantes, permitindo a categorização de novos dados em classes pré-definidas com base em um conjunto de dados previamente rotulado. A escolha do algoritmo de classificação e seu correto ajuste são etapas cruciais que impactam diretamente o desempenho e a precisão do modelo final.
+
+Este trabalho, realizado no âmbito da disciplina de Ciência de Dados, tem como objetivo principal aplicar, avaliar e interpretar o desempenho de diferentes algoritmos de classificação supervisionada. Para isso, serão utilizadas duas bases de dados públicas com características distintas: o *Dry Bean Dataset* e o *Glass Identification Dataset*.
+
+# 2. Descrição das Bases de Dados
+
+Para a realização deste estudo, foram selecionadas duas bases de dados públicas, que são descritas a seguir.
+
+## 2.1. Dry Bean Dataset
+
+Esta base de dados foi obtida a partir de um estudo que utilizou um sistema de visão computacional para extrair características de imagens de grãos de feijão. O objetivo é classificar os grãos em sete variedades diferentes.
+
+-   Link para a fonte: <https://www.kaggle.com/datasets/joebeachcapital/dry-beans>
+
+-   Descrição Geral:
+
+-   Número de Instâncias: 13.611.
+
+-   Número de Atributos: 17 (16 atributos previsores e 1 atributo classe).
+
+-   Atributo Classe: *Class* (contendo 7 tipos de feijão: *Barbunya, Bombay, Cali, Dermason, Horoz, Seker* e *Sira*).
+
+-   Valores Ausentes: A base de dados não possui valores ausentes.
+
+-   Tipos de Atributos: Os atributos são numéricos (inteiros e reais), representando medidas extraídas das imagens dos grãos, como área, perímetro, comprimento dos eixos principal e menor, e outros fatores de forma. Sendo eles:
+
+    -   Área (A): A área de um feijão e o número de pixels dentro de seus limites. à Contínuo
+
+    -   Perímetro (P): Tamanho da borda do feijão. à Contínuo
+
+    -   Comprimento do eixo principal (L): Definido pela distância das extremidades da linha mais longa a ser desenhada a partir de um feijão. à Contínuo
+
+    -   Comprimento do eixo menor (l): Definido pela linha mais longa que pode ser traçada a partir do feijão, mantendo-se perpendicular ao eixo principal. à Contínuo
+
+    -   Proporção (K): Define a relação entre os atributos L e l. à Contínuo
+
+    -   Excentricidade (Ec): Excentricidade da elipse que possui os mesmos momentos da região. à Contínuo
+
+    -   Área convexa (C): Número de pixels no menor polígono convexo capaz de conter a área da semente de feijão. à Discreto
+
+    -   Diâmetro equivalente (Ed): Diâmetro de um círculo que possui a mesma área que a área da semente de feijão. à Contínuo
+
+    -   Extensão (Ex): Razão entre o número de pixels do retângulo delimitador e a área da semente. à Contínuo
+
+    -   Solidez (S): Também conhecido como convexidade. É a razão entre o número de pixels na casca convexa e os encontrados na semente. à Contínuo
+
+    -   Circularidade (R): Quão circular é a forma, calculada pela fórmula que utiliza área (A) e perímetro (P). à Contínuo
+
+        -   R=(4πA)/ P2
+
+    -   Compacidade (CO): Mede o grau de arredondamento de um objeto, definido pela fórmula que une diâmetro (Ed) e maior eixo (L). à Contínuo
+
+        -   CO = Ed/L
+
+    -   Fator de Forma 1 (SF1), Fator de Forma 2 (SF2), Fator de Forma 3 (SF3), Fator de Forma 4 (SF4): Representam diferentes combinações matemáticas de área, perímetro e diâmetro para caracterizar a forma da semente. à Contínuo 
+
+    -   Classe: Categoria da semente de feijão (S*eker, Barbunya, Bombay, Cali, Dermosan, Horoz* e *Sira*). à Categórico
+
+Observando os dados da classe, é perceptível um desbalanceamento entre as categorias de feijão, sendo a classe *Dermason* a de maior peso. Em contrapartida, a classe *Bombay* se encontra em desvantagem, por ter a menor das representações.
+
+```{r}
+bean_df <- read_excel("Dry_Bean_Dataset.xlsx")
+bean_df <- as.data.table(bean_df)   # se quiser table/dt
+
+df <- bean_df %>% 
+  group_by(Class)%>% 
+  count(n())
+
+ggplot(df, aes(x = Class, y = n, fill = Class)) +
+  geom_col() +
+  labs(title = "Distribuição das Classes de Feijão",
+       x = "Classe",
+       y = "Frequência") +
+  theme_minimal()
+```
+
+## 2.2. Glass Identification Dataset
+
+Esta base de dados foi criada para investigações de ciência forense, onde fragmentos de vidro encontrados em cenas de crime podem ser usados como evidência se corretamente identificados. A classificação se baseia na composição química do vidro.
+
+-   Link para a fonte: <https://archive.ics.uci.edu/dataset/42/glass+identification>
+
+-   Descrição Geral:
+
+-   Número de Instâncias: 214.
+
+-   Número de Atributos: 11 (10 atributos previsores e 1 atributo classe).
+
+-   Atributo Classe: *Type_of_glass* (com 7 tipos possíveis, embora um deles não tenha instâncias na base, resultando em 6 classes efetivas).
+
+-   Valores Ausentes: A base de dados não possui valores ausentes.
+
+-   Tipos de Atributos: Os atributos são numéricos contínuos, representando o índice de refração (RI) e a porcentagem em peso de óxidos de diferentes elementos químicos (Sódio, Magnésio, Alumínio, etc.). Sendo eles:
+
+    -   Id_number: número identificador. à Discreto
+
+    -   RI: Índice de refração. à Contínuo
+
+    -   Na: Percentual em peso de sódio. à Contínuo
+
+    -   Mg: Percentual em peso de magnésio. à Contínuo
+
+    -   Al: Percentual em peso de alumínio. à Contínuo
+
+    -   Si: Percentual em peso de silício. à Contínuo
+
+    -   K: Percentual em peso de potássio. à Contínuo
+
+    -   Ca: Percentual em peso de cálcio. à Contínuo
+
+    -   Ba: Percentual em peso de bário. à Contínuo
+
+    -   Fe: Percentual em peso de ferro. à Contínuo
+
+    -   Classe:
+
+1.  Janelas de edifícios - *float*
+
+2.  Janelas de edifícios - não *float*
+
+3.  Janelas de veículos - *float*
+
+4.  Janelas de veículos - não *float* (sem amostras na base)
+
+5.  Recipientes
+
+6.  Utensílios de mesa
+
+7.  Faróis de veículos
+
+**Nota:** O termo “*float*” se refere à técnica de produção do vidro, onde uma camada fundida é nivelada sobre um banho de metal líquido que resulta num vidro uniforme e de superfície regular. Seu diferencial em relação ao método de “não *float*” está no índice de refração do material.
+
+A base escolhida é desbalanceada, não contendo representação da classe 4 (janelas de veículos não *float*), e contendo discrepâncias de representação das demais classes, como ilustra o gráfico.
+
+```{r}
+glass_df <- fread("glass.data", sep = ",", header = FALSE)
+colnames(glass_df) <- c(
+  "Id_number",
+  "RI",  # V2
+  "Na",               # V3
+  "Mg",               # V4
+  "Al",               # V5
+  "Si",               # V6
+  "K",                # V7
+  "Ca",               # V8
+  "Ba",               # V9
+  "Fe",               # V10
+  "Class"             # V11
+)
+
+df <- glass_df %>% 
+  group_by(Class)%>% 
+  count(n()) %>% 
+  mutate(Class = recode(Class,
+                        `1` = "Janelas de edifícios (float)",
+                        `2` = "Janelas de edifícios (não-float)",
+                        `3` = "Janelas de veículos (float)",
+                        `4` = "Janelas de veículos (não-float)",   # não há amostras
+                        `5` = "Recipientes",
+                        `6` = "Utensílios de mesa",
+                        `7` = "Faróis"
+  )) 
+
+
+
+ggplot(df, aes(x = Class, y = n, fill = Class)) +
+  geom_col() +
+  labs(title = "Distribuição das Classes de Vidro",
+       x = "Classe",
+       y = "Frequência") +
+  theme_minimal()
+```
+
+# 3. Ferramenta
+
+# 4. Dry Bean Dataset
+
+## 4.1. Pré-processamento
+
+Na base Dry Beans, que contém 13.611 instâncias e 16 atributos numéricos derivados de medidas geométricas das sementes, foram aplicadas três etapas principais de pré-processamento: amostragem, redução de dimensionalidade e transformação de variáveis.
+
+### 4.1.1. Amostragem
+
+A amostragem foi considerada na base Dry Beans devido ao grande número de instâncias (13.611), permitindo reduzir o custo computacional durante os experimentos e possibilitando a execução de testes preliminares com subconjuntos menores de dados, garantindo maior eficiência na comparação entre classificadores. Optou-se pela amostragem estratificada, de modo a preservar as proporções originais das sete classes de feijões no subconjunto selecionado, o que se mostra essencial diante do desbalanceamento existente entre as classes, já que algumas variedades possuem muito mais instâncias que outras. Assim, essa estratégia assegura que o conjunto reduzido de dados mantenha a diversidade e representatividade necessárias para uma avaliação consistente do desempenho dos algoritmos de classificação.
+
+```{r}
+frac_global <- 0.03  # define o tamanho da partição para 3% do dataset
+
+bean_df_bal <- bean_df %>%
+  group_by(Class) %>% 
+  slice_sample(prop = frac_global) %>% # realiza a partiçao da amostragem
+  ungroup()
+
+
+# Garantia de manutenção das proporções
+df <- bean_df_bal %>% 
+  group_by(Class)%>% 
+  count(n())
+
+ggplot(df, aes(x = Class, y = n, fill = Class)) +
+  geom_col() +
+  labs(title = "Distribuição das Classes de Feijão",
+       x = "Classe",
+       y = "Frequência") +
+  theme_minimal()
+```
+
+### 4.1.2. Redução de Dimensionalidade
+
+Na redução de dimensionalidade, observou-se que diversos atributos da base são derivados de outros já existentes, apresentando, portanto, redundância. Por exemplo, o atributo *AspectRation* é calculado a partir da razão entre *MajorAxisLength* e *MinorAxisLength*, enquanto *Roundness* e *Compactness* utilizam *Area* e *Perimeter* em suas fórmulas. Dessa forma, optou-se por manter os atributos derivados e remover os fundamentais. Essa abordagem preserva a informação essencial em métricas normalizadas e reduz a redundância entre variáveis, conforme ilustrado na tabela apresentada nesta seção.
+
+```{r}
+# Retirada das colunas fundamentais 
+bean_df_bal <- bean_df_bal %>% 
+  select(-c("MinorAxisLength", "MajorAxisLength", "Area", "Perimeter", "ConvexArea"))
+```
+
+### 4.1.3. Normalização
+
+No processo de pré-processamento dos dados, adotou-se a normalização das variáveis preditoras, etapa fundamental para a execução de algoritmos de classificação baseados em medidas de distância e em modelos estatísticos multivariados. Foram utilizadas duas abordagens distintas conforme a necessidade de cada algoritmo: a normalização por re-escala e a padronização. A normalização por re-escala transforma os atributos para um intervalo comum, tipicamente \[0, 1\], evitando que variáveis com grande amplitude numérica dominem o cálculo das distâncias, como ocorre no KNN. Já a padronização converte cada atributo para média zero e desvio-padrão unitário, garantindo comparabilidade em algoritmos como a regressão logística, que assumem variáveis centradas e na mesma escala. Dessa forma, a aplicação dessas técnicas assegurou que todos os atributos contribuíssem de forma equilibrada no processo de classificação, aumentando a robustez e a interpretabilidade dos resultados obtidos.
+
+#### 4.1.3.1. Re-escalar
+
+Normalização utilizada para o algoritmo KNN.
+
+```{r}
+min_max_normalization <- function(x) {
+  return ((x - min(x)) / (max(x) - min(x)))
+}
+
+# Aplicando normalização (re-escala) nas colunas numéricas
+bean_df_res <- bean_df_bal %>% 
+  mutate(across(c("AspectRation", "Eccentricity", "EquivDiameter", "Extent", "Solidity", "roundness", "Compactness", "ShapeFactor1", "ShapeFactor2", "ShapeFactor3", "ShapeFactor4"), min_max_normalization))
+
+bean_df_res %>% 
+  select(
+    AspectRation, 
+    Eccentricity, 
+    EquivDiameter, 
+    Extent, 
+    Solidity, 
+    roundness, 
+    Compactness, 
+    ShapeFactor1, 
+    ShapeFactor2, 
+    ShapeFactor3, 
+    ShapeFactor4
+  )
+```
+
+#### 4.1.3.2. Padronização
+
+Normalização utilizada para o algoritmo Regressão Logística.
+
+```{r}
+padronization_norm <- function(x){
+  return((x-mean(x))/sd(x))
+}
+
+# Aplicando normalização (padronização) nas colunas numéricas
+bean_df_pad <- bean_df_res %>% 
+  mutate(across(c("AspectRation", "Eccentricity", "EquivDiameter", "Extent", "Solidity", "roundness", "Compactness", "ShapeFactor1", "ShapeFactor2", "ShapeFactor3", "ShapeFactor4"), padronization_norm))
+
+bean_df_pad %>% 
+  select(
+    AspectRation, 
+    Eccentricity, 
+    EquivDiameter, 
+    Extent, 
+    Solidity, 
+    roundness, 
+    Compactness, 
+    ShapeFactor1, 
+    ShapeFactor2, 
+    ShapeFactor3, 
+    ShapeFactor4
+  )
+```
+
+## 4.2. Estratégia da Divisão da Base de Dados
+
+Adotou-se a estratégia de divisão Holdout para a separação dos dados em treino e teste. Essa técnica consiste em particionar a base em dois subconjuntos mutuamente exclusivos: um destinado ao treinamento do modelo e outro reservado para a sua avaliação. Optou-se por utilizar aproximadamente 2/3 dos dados para o treino e 1/3 para o teste, de modo a garantir que o classificador tivesse acesso a uma quantidade suficiente de instâncias para o aprendizado, ao mesmo tempo em que fosse avaliado em exemplos não vistos durante o treinamento. Essa abordagem permite estimar o desempenho do modelo de forma direta e eficiente, sendo amplamente utilizada em cenários com bases de dados de tamanho moderado.
+
+```{r}
+# ----- Exemplo de como foi incluído o Holdout nos algoritmos -----
+# slice_sample(prop = 2/3) # Realiza a partição da base para treino e teste em 2/3, sendo 2/3 para treino e 1/3 para teste
+```
+
+## 4.3. Algoritmos
+
+### 4.3.1. Árvore de Decisão
+
+```{r}
+set.seed(42)  # Reprodutibilidade
+
+stopifnot(exists("bean_df_res")) # Verifica se o dataset existe
+target_col <- "Class"
+stopifnot(target_col %in% names(bean_df_res)) # Verifica se a classe existe
+bean_df_res[[target_col]] <- as.factor(bean_df_res[[target_col]]) # Garante que a classe é factor
+
+# Índices por classe
+idx_treino_dt_bean <- bean_df_res %>%
+  mutate(row_id = dplyr::row_number()) %>%
+  group_by(.data[[target_col]]) %>%
+  slice_sample(prop = 2/3) %>% # Realiza a partição da base para treino e teste
+  pull(row_id)
+
+train_dt_bean <- bean_df_res[idx_treino_dt_bean, ]
+test_dt_bean  <- bean_df_res[-idx_treino_dt_bean, ]
+
+# Fórmula: alvo ~ todos os preditores
+form_dt_bean <- reformulate(setdiff(names(train_dt_bean), target_col), response = target_col)
+
+# Treinar duas árvores com cp diferentes
+cp_001_dt_bean  <- rpart(form_dt_bean, data = train_dt_bean, method = "class", control = rpart.control(cp = 0.01))
+cp_0005_dt_bean <- rpart(form_dt_bean, data = train_dt_bean, method = "class", control = rpart.control(cp = 0.005))
+
+# Prever no conjunto de teste
+pred_001_dt_bean  <- predict(cp_001_dt_bean,  newdata = test_dt_bean, type = "class")
+pred_0005_dt_bean <- predict(cp_0005_dt_bean, newdata = test_dt_bean, type = "class")
+
+# Avaliar (matriz de confusão e acurácia)
+cm_001_dt_bean <- confusionMatrix(pred_001_dt_bean, test_dt_bean[[target_col]])
+cm_0005_dt_bean <- confusionMatrix(pred_0005_dt_bean, test_dt_bean[[target_col]])
+
+acc_001_dt_bean  <- cm_001_dt_bean$overall["Accuracy"]
+acc_0005_dt_bean <- cm_0005_dt_bean$overall["Accuracy"]
+
+cat("\n---------------------- Árvore (cp = 0.01) ----------------------\n")
+print(cm_001_dt_bean)
+cat(sprintf("\nAcurácia (cp=0.01): %.4f\n", acc_001_dt_bean))
+
+cat("\n--------------------- Árvore (cp = 0.005) ----------------------\n")
+print(cm_0005_dt_bean)
+cat(sprintf("\nAcurácia (cp=0.005): %.4f\n", acc_0005_dt_bean))
+```
+
+### 4.3.2. KNN
+
+```{r}
+set.seed(42) # Reprodutibilidade
+
+stopifnot(exists("bean_df_res")) # Verifica se o dataset existe
+target_col <- "Class"
+stopifnot(target_col %in% names(bean_df_res)) # Verifica se a classe existe
+bean_df_res[[target_col]] <- as.factor(bean_df_res[[target_col]]) # Garante que a classe é factor
+
+# Índices por classe
+idx_treino_knn_bean <- bean_df_res %>%
+  mutate(row_id = dplyr::row_number()) %>%
+  group_by(.data[[target_col]]) %>%
+  slice_sample(prop = 2/3) %>% # Realiza a partição da base para treino e teste
+  pull(row_id)
+
+train_knn_bean <- bean_df_res[idx_treino_knn_bean, ]
+test_knn_bean  <- bean_df_res[-idx_treino_knn_bean, ]
+
+# Matriz de preditores (x) e vetores de classe (y)
+X_train_knn_bean <- train_knn_bean %>%
+  select(-all_of(target_col)) %>% 
+  as.data.frame()
+
+X_test_knn_bean  <- test_knn_bean %>% 
+  select(-all_of(target_col)) %>% 
+  as.data.frame()
+
+y_train_knn_bean <- train_knn_bean[[target_col]]
+y_test_knn_bean <- test_knn_bean[[target_col]]
+
+stopifnot(is.factor(y_train_knn_bean), is.factor(y_test_knn_bean)) # Verifica se todos os valores são factor (exigido pelo KNN)
+stopifnot(all(sapply(X_train_knn_bean, is.numeric)), all(sapply(X_test_knn_bean, is.numeric))) # Verifica se todos os valores são numéricos (exigido pelo KNN)
+
+# Executar KNN para k =5
+k_5_knn_bean <- 5 # Define a quantidade de K-vizinhos mais próximos
+
+pred_k_5_knn_bean <- knn(
+  train = X_train_knn_bean,   # base de treino (preditores)
+  test  = X_test_knn_bean,    # base de teste  (preditores)
+  cl    = y_train_knn_bean,   # classes de treino (factor)
+  k     = k_5_knn_bean        # número de vizinhos
+)
+
+# Avaliar (matriz de confusão e acurácia)
+conf_k_5_knn_bean <- table(Predito = pred_k_5_knn_bean, Real = y_test_knn_bean)
+acc_k_5_knn_bean  <- mean(pred_k_5_knn_bean == y_test_knn_bean)
+
+conf_k_5_knn_bean
+acc_k_5_knn_bean
+
+# Executar KNN para k = 10
+k_10_knn_bean <- 10 # Define a quantidade de K-vizinhos mais próximos
+
+pred_k_10_knn_bean <- knn(
+  train = X_train_knn_bean,   # base de treino (preditores)
+  test  = X_test_knn_bean,    # base de teste  (preditores)
+  cl    = y_train_knn_bean,   # classes de treino (factor)
+  k     = k_10_knn_bean       # número de vizinhos
+)
+
+# Avaliar (matriz de confusão e acurácia)
+conf_k_10_knn_bean <- table(Predito = pred_k_10_knn_bean, Real = y_test_knn_bean)
+acc_k_10_knn_bean  <- mean(pred_k_10_knn_bean == y_test_knn_bean)
+
+conf_k_10_knn_bean
+acc_k_10_knn_bean
+```
+
+### 4.3.3. Regressão Logística
+
+```{r}
+set.seed(42)
+ 
+# Definido partição de treino
+idx_treino_rl_bean <- bean_df_pad %>%
+  group_by(Class) %>%
+  slice_sample(prop = 2/3) # Realiza a partição da base para treino e teste
+ 
+train_rl_bean <- bean_df_pad
+ 
+idx_teste_rl_bean <- bean_df_pad %>% 
+  anti_join(idx_treino_rl_bean)
+model_rl_bean <- multinom(Class ~ AspectRation + Eccentricity + EquivDiameter + Extent + Solidity + roundness + Compactness + ShapeFactor1 + ShapeFactor2 + ShapeFactor3 + ShapeFactor4, data = idx_treino_rl_bean)
+ 
+coefs <- summary(model_rl_bean)$coefficients # pesos atribuidos a cada atributo de acordo com a classe
+ 
+prediction_rl_bean <- predict(model_rl_bean, newdata = idx_teste_rl_bean)
+```
+
+## 4.4. Medidas de Avaliação
+
+Para a avaliação dos classificadores, foram utilizadas duas medidas principais: a matriz de confusão e a acurácia. A matriz de confusão consiste em uma tabela que organiza as previsões do modelo em relação aos valores reais, discriminando corretamente os acertos e os erros de classificação para cada classe. A acurácia, por sua vez, expressa a proporção de instâncias corretamente classificadas pelo modelo em relação ao total de instâncias avaliadas, sendo calculada pela fórmula:
+
+Acurácia = (TP + TN) / (TP + TN + FP + FN)
+
+em que TP (true positive) e TN (true negative) representam as previsões corretas, enquanto FP (false positive) e FN (false negative) correspondem às classificações incorretas.
+
+# 5. Glass Identification Dataset
+
+## 5.1. Pré-processamento
+
+Na base Glass Identification, composta por 214 instâncias e 9 atributos numéricos, foram aplicadas duas etapas principais de pré-processamento: seleção de atributos e transformação de variáveis.
+
+### 5.1.1. Seleção de Atributos
+
+Na seleção de atributos, foi realizada a remoção do campo *Id_number*, uma vez que esse atributo não possui relevância para a classificação e poderia introduzir ruído no modelo.
+
+```{r}
+glass_df <- glass_df %>% 
+  select(-Id_number)
+```
+
+### 5.1.2. Normalização
+
+No processo de pré-processamento dos dados, adotou-se a normalização das variáveis preditoras, etapa fundamental para a execução de algoritmos de classificação baseados em medidas de distância e em modelos estatísticos multivariados. Foram utilizadas duas abordagens distintas conforme a necessidade de cada algoritmo: a normalização por re-escala e a padronização. A normalização por re-escala transforma os atributos para um intervalo comum, tipicamente \[0, 1\], evitando que variáveis com grande amplitude numérica dominem o cálculo das distâncias, como ocorre no KNN. Já a padronização converte cada atributo para média zero e desvio-padrão unitário, garantindo comparabilidade em algoritmos como a regressão logística, que assumem variáveis centradas e na mesma escala. Dessa forma, a aplicação dessas técnicas assegurou que todos os atributos contribuíssem de forma equilibrada no processo de classificação, aumentando a robustez e a interpretabilidade dos resultados obtidos.
+
+#### 5.1.2.1. Re-escalar
+
+Normalização utilizada para o algoritmo KNN.
+
+```{r}
+glass_df_res <- glass_df %>% 
+  mutate(across(c("RI","Na","Mg","Al","Si","K","Ca","Ba","Fe"), min_max_normalization))
+
+glass_df_res %>% 
+  select(-Class)
+```
+
+#### 5.1.2.2. Padronização
+
+Normalização utilizada para o algoritmo Regressão Logística.
+
+```{r}
+glass_df_pad <- glass_df %>% 
+  mutate(across(c("RI","Na","Mg","Al","Si","K","Ca","Ba","Fe"), padronization_norm))
+
+glass_df_pad %>% 
+  select(-Class)
+```
+
+## 5.2. Estratégia da Divisão da Base de Dados
+
+Adotou-se a estratégia de divisão Holdout para a separação dos dados em treino e teste. Essa técnica consiste em particionar a base em dois subconjuntos mutuamente exclusivos: um destinado ao treinamento do modelo e outro reservado para a sua avaliação. Optou-se por utilizar aproximadamente 2/3 dos dados para o treino e 1/3 para o teste, de modo a garantir que o classificador tivesse acesso a uma quantidade suficiente de instâncias para o aprendizado, ao mesmo tempo em que fosse avaliado em exemplos não vistos durante o treinamento. Essa abordagem permite estimar o desempenho do modelo de forma direta e eficiente, sendo amplamente utilizada em cenários com bases de dados de tamanho moderado.
+
+```{r}
+# ----- Exemplo de como foi incluído o Holdout nos algoritmos -----
+# slice_sample(prop = 2/3) # Realiza a partição da base para treino e teste em 2/3, sendo 2/3 para treino e 1/3 para teste
+```
+
+## 5.3. Algoritmos
+
+### 5.3.1. Árvore de Decisão
+
+```{r}
+set.seed(42)  # Reprodutibilidade
+
+stopifnot(exists("glass_df_res")) # Verifica se o dataset existe
+target_col <- "Class"
+stopifnot(target_col %in% names(glass_df_res)) # Verifica se a classe existe
+glass_df_res[[target_col]] <- as.factor(glass_df_res[[target_col]]) # Garante que a classe é factor
+
+# Índices por classe
+idx_treino_dt_glass <- glass_df_res %>%
+  mutate(row_id = dplyr::row_number()) %>%
+  group_by(.data[[target_col]]) %>%
+  slice_sample(prop = 2/3) %>% # Realiza a partição da base para treino e teste
+  pull(row_id)
+
+train_dt_glass <- glass_df_res[idx_treino_dt_glass, ]
+test_dt_glass  <- glass_df_res[-idx_treino_dt_glass, ]
+
+# Fórmula: alvo ~ todos os preditores
+form_dt_glass <- reformulate(setdiff(names(train_dt_glass), target_col), response = target_col)
+
+# Treinar duas árvores com cp diferentes
+cp_001_dt_glass  <- rpart(form_dt_glass, data = train_dt_glass, method = "class", control = rpart.control(cp = 0.01))
+cp_0005_dt_glass <- rpart(form_dt_glass, data = train_dt_glass, method = "class", control = rpart.control(cp = 0.005))
+
+# Prever no conjunto de teste
+pred_001_dt_glass  <- predict(cp_001_dt_glass,  newdata = test_dt_glass, type = "class")
+pred_0005_dt_glass <- predict(cp_0005_dt_glass, newdata = test_dt_glass, type = "class")
+
+# Avaliar (matriz de confusão e acurácia)
+cm_001_dt_glass  <- confusionMatrix(pred_001_dt_glass,  test_dt_glass[[target_col]])
+cm_0005_dt_glass <- confusionMatrix(pred_0005_dt_glass, test_dt_glass[[target_col]])
+
+acc_001_dt_glass  <- cm_001_dt_glass$overall["Accuracy"]
+acc_0005_dt_glass <- cm_0005_dt_glass$overall["Accuracy"]
+
+cat("\n---------------------- Árvore (cp = 0.01) ----------------------\n")
+print(cm_001_dt_glass)
+cat(sprintf("\nAcurácia (cp=0.01): %.4f\n", acc_001_dt_glass))
+
+cat("\n--------------------- Árvore (cp = 0.005) ----------------------\n")
+print(cm_0005_dt_glass)
+cat(sprintf("\nAcurácia (cp=0.005): %.4f\n", acc_0005_dt_glass))
+```
+
+### 5.3.2. KNN
+
+```{r}
+set.seed(42) # Reprodutibilidade
+
+stopifnot(exists("glass_df_res")) # Verifica se o dataset existe
+target_col <- "Class"
+stopifnot(target_col %in% names(glass_df_res)) # Verifica se a classe existe
+glass_df_res[[target_col]] <- as.factor(glass_df_res[[target_col]]) # Garante que a classe é factor
+
+# Índices por classe
+idx_treino_knn_glass <- glass_df_res %>%
+  mutate(row_id = dplyr::row_number()) %>%
+  group_by(.data[[target_col]]) %>%
+  slice_sample(prop = 2/3) %>% # Realiza a partição da base para treino e teste
+  pull(row_id)
+
+train_knn_glass <- glass_df_res[idx_treino_knn_glass, ]
+test_knn_glass  <- glass_df_res[-idx_treino_knn_glass, ]
+
+# Matriz de preditores (x) e vetores de classe (y)
+X_train_knn_glass <- train_knn_glass %>% select(-all_of(target_col)) %>% as.data.frame()
+X_test_knn_glass  <- test_knn_glass  %>% select(-all_of(target_col)) %>% as.data.frame()
+
+y_train_knn_glass <- train_knn_glass[[target_col]]
+y_test_knn_glass  <- test_knn_glass[[target_col]]
+
+stopifnot(is.factor(y_train_knn_glass), is.factor(y_test_knn_glass)) # Verifica se todos os valores são factor (exigido pelo KNN)
+stopifnot(all(sapply(X_train_knn_glass, is.numeric)), all(sapply(X_test_knn_glass, is.numeric))) # Verifica se todos os valores são numéricos (exigido pelo KNN)
+
+# Executar KNN para k = 5
+k_5_knn_glass <- 5 # Define a quantidade de K-vizinhos mais próximos
+
+pred_k_5_knn_glass <- knn(
+  train = X_train_knn_glass,
+  test  = X_test_knn_glass,
+  cl    = y_train_knn_glass,
+  k     = k_5_knn_glass
+)
+
+# Avaliar (matriz de confusão e acurácia)
+conf_k_5_knn_glass <- table(Predito = pred_k_5_knn_glass, Real = y_test_knn_glass)
+acc_k_5_knn_glass  <- mean(pred_k_5_knn_glass == y_test_knn_glass)
+
+conf_k_5_knn_glass
+acc_k_5_knn_glass
+
+# Executar KNN para k = 10
+k_10_knn_glass <- 10 # Define a quantidade de K-vizinhos mais próximos
+
+pred_k_10_knn_glass <- knn(
+  train = X_train_knn_glass,
+  test  = X_test_knn_glass,
+  cl    = y_train_knn_glass,
+  k     = k_10_knn_glass
+)
+
+# Avaliar (matriz de confusão e acurácia)
+conf_k_10_knn_glass <- table(Predito = pred_k_10_knn_glass, Real = y_test_knn_glass)
+acc_k_10_knn_glass  <- mean(pred_k_10_knn_glass == y_test_knn_glass)
+
+conf_k_10_knn_glass
+acc_k_10_knn_glass
+```
+
+### 5.3.3. Regressão Logística
+
+```{r}
+set.seed(42)
+ 
+# Definido partição de treino
+idx_treino_rl_glass <- glass_df_pad %>%
+  group_by(Class) %>%
+  slice_sample(prop = 2/3) # Realiza a partição da base para treino e teste
+ 
+idx_teste_rl_glass <- glass_df_pad %>% 
+  anti_join(idx_treino_rl_glass)
+model <- multinom(Class ~ RI + Na + Mg + Al + Si + K + Ca + Ba + Fe, data = idx_treino_rl_glass)
+ 
+coefs <- summary(model)$coefficients # pesos atribuidos a cada atributo de acordo com a classe
+ 
+prediction_rl_glass <- predict(model, newdata = idx_teste_rl_glass)
+```
+
+## 5.4. Medidas de Avaliação
+
+# 7. Resultados
