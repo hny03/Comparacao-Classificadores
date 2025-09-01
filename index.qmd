@@ -350,7 +350,106 @@ glass_df_pad %>%
 
 ### 5.1.1. Dry Bean Dataset
 
+```{r}library(dplyr)}
+library(rpart)
+library(caret)
+
+set.seed(42)  # Reprodutibilidade
+
+stopifnot(exists("bean_df_res")) # Verifica se o dataset existe
+target_col <- "Class"
+stopifnot(target_col %in% names(bean_df_res)) # Verifica se a classe existe
+bean_df_res[[target_col]] <- as.factor(bean_df_res[[target_col]]) # Garante que a classe é factor
+
+# Índices por classe
+idx_treino <- bean_df_res %>%
+  mutate(row_id = dplyr::row_number()) %>%
+  group_by(.data[[target_col]]) %>%
+  slice_sample(prop = 2/3) %>% # Realiza a partição da base para treino e teste
+  pull(row_id)
+
+train_df <- bean_df_res[idx_treino, ]
+test_df  <- bean_df_res[-idx_treino, ]
+
+# Fórmula: alvo ~ todos os preditores
+form <- reformulate(setdiff(names(train_df), target_col), response = target_col)
+
+# Treinar duas árvores com cp diferentes
+tree_cp_001  <- rpart(form, data = train_df, method = "class",
+                      control = rpart.control(cp = 0.01))
+tree_cp_0005 <- rpart(form, data = train_df, method = "class",
+                      control = rpart.control(cp = 0.005))
+
+# Prever no conjunto de teste
+pred_001  <- predict(tree_cp_001,  newdata = test_df, type = "class")
+pred_0005 <- predict(tree_cp_0005, newdata = test_df, type = "class")
+
+# Avaliar (matriz de confusão e acurácia)
+cm_001  <- confusionMatrix(pred_001,  test_df[[target_col]])
+cm_0005 <- confusionMatrix(pred_0005, test_df[[target_col]])
+
+acc_001  <- cm_001$overall["Accuracy"]
+acc_0005 <- cm_0005$overall["Accuracy"]
+
+cat("\n---------------------- Árvore (cp = 0.01) ----------------------\n")
+print(cm_001)
+cat(sprintf("\nAcurácia (cp=0.01): %.4f\n", acc_001))
+
+cat("\n--------------------- Árvore (cp = 0.005) ----------------------\n")
+print(cm_0005)
+cat(sprintf("\nAcurácia (cp=0.005): %.4f\n", acc_0005))
+```
+
 ### 5.1.2. Glass Identification Dataset
+
+```{r}
+library(dplyr)
+library(rpart)
+library(caret)
+
+set.seed(42)  # Reprodutibilidade
+
+stopifnot(exists("glass_df_res")) # Verifica se o dataset existe
+target_col <- "Class"
+stopifnot(target_col %in% names(glass_df_res)) # Verifica se a classe existe
+glass_df_res[[target_col]] <- as.factor(glass_df_res[[target_col]]) # Garante que a classe é factor
+
+# Índices por classe
+idx_treino <- glass_df_res %>%
+  mutate(row_id = dplyr::row_number()) %>%
+  group_by(.data[[target_col]]) %>%
+  slice_sample(prop = 2/3) %>% # Realiza a partição da base para treino e teste
+  pull(row_id)
+
+train_df <- glass_df_res[idx_treino, ]
+test_df  <- glass_df_res[-idx_treino, ]
+
+# Fórmula: alvo ~ todos os preditores
+form <- reformulate(setdiff(names(train_df), target_col), response = target_col)
+
+# Treinar duas árvores com cp diferentes
+tree_cp_001  <- rpart(form, data = train_df, method = "class", control = rpart.control(cp = 0.01))
+tree_cp_0005 <- rpart(form, data = train_df, method = "class", control = rpart.control(cp = 0.005))
+
+# Prever no conjunto de teste
+pred_001  <- predict(tree_cp_001,  newdata = test_df, type = "class")
+pred_0005 <- predict(tree_cp_0005, newdata = test_df, type = "class")
+
+# Avaliar (matriz de confusão e acurácia)
+cm_001  <- confusionMatrix(pred_001,  test_df[[target_col]])
+cm_0005 <- confusionMatrix(pred_0005, test_df[[target_col]])
+
+acc_001  <- cm_001$overall["Accuracy"]
+acc_0005 <- cm_0005$overall["Accuracy"]
+
+cat("\n---------------------- Árvore (cp = 0.01) ----------------------\n")
+print(cm_001)
+cat(sprintf("\nAcurácia (cp=0.01): %.4f\n", acc_001))
+
+cat("\n--------------------- Árvore (cp = 0.005) ----------------------\n")
+print(cm_0005)
+cat(sprintf("\nAcurácia (cp=0.005): %.4f\n", acc_0005))
+```
 
 ## 5.2. KNN
 
@@ -367,13 +466,11 @@ target_col <- "Class"
 stopifnot(target_col %in% names(bean_df_res)) # Verifica se a classe existe
 bean_df_res[[target_col]] <- as.factor(bean_df_res[[target_col]]) # Garante que a classe é factor
 
-split_ratio <- 0.66 # Define o tamanho da partição
-
 # Índices por classe
 idx_treino <- bean_df_res %>%
   mutate(row_id = dplyr::row_number()) %>%
   group_by(.data[[target_col]]) %>%
-  slice_sample(prop = split_ratio) %>% # Realiza a partição da base para treino e teste
+  slice_sample(prop = 2/3) %>% # Realiza a partição da base para treino e teste
   pull(row_id)
 
 train_df <- bean_df_res[idx_treino, ]
@@ -420,13 +517,11 @@ target_col <- "Class"
 stopifnot(target_col %in% names(glass_df_res)) # Verifica se a classe existe
 glass_df_res[[target_col]] <- as.factor(glass_df_res[[target_col]]) # Garante que a classe é factor
 
-split_ratio <- 0.66 # Define o tamanho da partição
-
 # Índices por classe
 idx_treino <- glass_df_res %>%
   mutate(row_id = dplyr::row_number()) %>%
   group_by(.data[[target_col]]) %>%
-  slice_sample(prop = split_ratio) %>% # Realiza a partição da base para treino e teste
+  slice_sample(prop = 2/3) %>% # Realiza a partição da base para treino e teste
   pull(row_id)
 
 train_df <- glass_df_res[idx_treino, ]
@@ -471,11 +566,9 @@ head(bean_df_pad)
 
 # Definido partição de treino
 
-split_ratio <- 0.66 # Define o tamanho da partição
-
 idx_treino <- bean_df_pad %>%
   group_by(Class) %>%
-  slice_sample(prop = split_ratio) # Realiza a partição da base para treino e teste
+  slice_sample(prop = 2/3) # Realiza a partição da base para treino e teste
 
 idx_teste <- bean_df_pad %>% 
   anti_join(idx_treino)
@@ -512,11 +605,9 @@ head(glass_df_pad)
 
 # Definido partição de treino
 
-split_ratio <- 0.66 # Define o tamanho da partição
-
 idx_treino <- glass_df_pad %>%
   group_by(Class) %>%
-  slice_sample(prop = split_ratio) # Realiza a partição da base para treino e teste
+  slice_sample(prop = 2/3) # Realiza a partição da base para treino e teste
 
 idx_teste <- glass_df_pad %>% 
   anti_join(idx_treino)
@@ -550,11 +641,12 @@ Adotou-se a estratégia de divisão Holdout para a separação dos dados em trei
 
 ```{r}
 # ----- Exemplo de como foi incluído o Holdout nos algoritmos -----
-# split_ratio <- 0.66 # Define o tamanho da partição
-# slice_sample(prop = split_ratio) # Realiza a partição da base para treino e teste
+# slice_sample(prop = 2/3) # Realiza a partição da base para treino e teste em 2/3, sendo 2/3 para treino e 1/3 para teste
 ```
 
 # 7. Medidas de Avaliação
+
+matriz de confusão e acurácia
 
 # 8. Parâmetros
 
