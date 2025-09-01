@@ -398,13 +398,6 @@ pred_k_5_knn_bean <- knn(
   k     = k_5_knn_bean        # número de vizinhos
 )
 
-# Avaliar (matriz de confusão e acurácia)
-conf_k_5_knn_bean <- table(Predito = pred_k_5_knn_bean, Real = y_test_knn_bean)
-acc_k_5_knn_bean  <- mean(pred_k_5_knn_bean == y_test_knn_bean)
-
-conf_k_5_knn_bean
-acc_k_5_knn_bean
-
 # Executar KNN para k = 10
 k_10_knn_bean <- 10 # Define a quantidade de K-vizinhos mais próximos
 
@@ -414,13 +407,6 @@ pred_k_10_knn_bean <- knn(
   cl    = y_train_knn_bean,   # classes de treino (factor)
   k     = k_10_knn_bean       # número de vizinhos
 )
-
-# Avaliar (matriz de confusão e acurácia)
-conf_k_10_knn_bean <- table(Predito = pred_k_10_knn_bean, Real = y_test_knn_bean)
-acc_k_10_knn_bean  <- mean(pred_k_10_knn_bean == y_test_knn_bean)
-
-conf_k_10_knn_bean
-acc_k_10_knn_bean
 ```
 
 ### 4.3.3. Regressão Logística
@@ -433,10 +419,9 @@ idx_treino_rl_bean <- bean_df_pad %>%
   group_by(Class) %>%
   slice_sample(prop = 2/3) # Realiza a partição da base para treino e teste
  
-train_rl_bean <- bean_df_pad
- 
 idx_teste_rl_bean <- bean_df_pad %>% 
   anti_join(idx_treino_rl_bean)
+
 model_rl_bean <- multinom(Class ~ AspectRation + Eccentricity + EquivDiameter + Extent + Solidity + roundness + Compactness + ShapeFactor1 + ShapeFactor2 + ShapeFactor3 + ShapeFactor4, data = idx_treino_rl_bean)
  
 coefs <- summary(model_rl_bean)$coefficients # pesos atribuidos a cada atributo de acordo com a classe
@@ -451,6 +436,34 @@ Para a avaliação dos classificadores, foram utilizadas duas medidas principais
 Acurácia = (TP + TN) / (TP + TN + FP + FN)
 
 em que TP (true positive) e TN (true negative) representam as previsões corretas, enquanto FP (false positive) e FN (false negative) correspondem às classificações incorretas.
+
+```{r}
+# -------------------- Árvore de Decisão --------------------
+
+# -------------------- KNN --------------------
+
+# Avaliar | k = 5
+conf_k_5_knn_bean <- table(Predito = pred_k_5_knn_bean, Real = y_test_knn_bean)
+acc_k_5_knn_bean  <- mean(pred_k_5_knn_bean == y_test_knn_bean)
+
+conf_k_5_knn_bean
+acc_k_5_knn_bean
+
+# Avaliar | k = 10
+conf_k_10_knn_bean <- table(Predito = pred_k_10_knn_bean, Real = y_test_knn_bean)
+acc_k_10_knn_bean  <- mean(pred_k_10_knn_bean == y_test_knn_bean)
+
+conf_k_10_knn_bean
+acc_k_10_knn_bean
+
+# -------------------- Regressão Logística --------------------
+
+conf_rl_bean <- table(Predito = prediction_rl_bean, Real = idx_teste_rl_bean$Class)
+acc_rl_bean  <- mean(prediction_rl_bean == idx_teste_rl_bean$Class)
+
+conf_rl_bean
+acc_rl_bean
+```
 
 # 5. Glass Identification Dataset
 
@@ -638,5 +651,11 @@ prediction_rl_glass <- predict(model, newdata = idx_teste_rl_glass)
 ```
 
 ## 5.4. Medidas de Avaliação
+
+Para a avaliação dos classificadores, foram utilizadas duas medidas principais: a matriz de confusão e a acurácia. A matriz de confusão consiste em uma tabela que organiza as previsões do modelo em relação aos valores reais, discriminando corretamente os acertos e os erros de classificação para cada classe. A acurácia, por sua vez, expressa a proporção de instâncias corretamente classificadas pelo modelo em relação ao total de instâncias avaliadas, sendo calculada pela fórmula:
+
+Acurácia = (TP + TN) / (TP + TN + FP + FN)
+
+em que TP (true positive) e TN (true negative) representam as previsões corretas, enquanto FP (false positive) e FN (false negative) correspondem às classificações incorretas.
 
 # 7. Resultados
