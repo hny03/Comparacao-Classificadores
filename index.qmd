@@ -373,32 +373,30 @@ train_dt_bean <- bean_df_res[idx_treino_dt_bean, ]
 test_dt_bean  <- bean_df_res[-idx_treino_dt_bean, ]
 
 # Fórmula: alvo ~ todos os preditores
-form <- reformulate(setdiff(names(train_dt_bean), target_col), response = target_col)
+form_dt_bean <- reformulate(setdiff(names(train_dt_bean), target_col), response = target_col)
 
 # Treinar duas árvores com cp diferentes
-tree_cp_001  <- rpart(form, data = train_dt_bean, method = "class",
-                      control = rpart.control(cp = 0.01))
-tree_cp_0005 <- rpart(form, data = train_dt_bean, method = "class",
-                      control = rpart.control(cp = 0.005))
+cp_001_dt_bean  <- rpart(form_dt_bean, data = train_dt_bean, method = "class", control = rpart.control(cp = 0.01))
+cp_0005_dt_bean <- rpart(form_dt_bean, data = train_dt_bean, method = "class", control = rpart.control(cp = 0.005))
 
 # Prever no conjunto de teste
-pred_001  <- predict(tree_cp_001,  newdata = test_dt_bean, type = "class")
-pred_0005 <- predict(tree_cp_0005, newdata = test_dt_bean, type = "class")
+pred_001_dt_bean  <- predict(cp_001_dt_bean,  newdata = test_dt_bean, type = "class")
+pred_0005_dt_bean <- predict(cp_0005_dt_bean, newdata = test_dt_bean, type = "class")
 
 # Avaliar (matriz de confusão e acurácia)
-cm_001  <- confusionMatrix(pred_001,  test_dt_bean[[target_col]])
-cm_0005 <- confusionMatrix(pred_0005, test_dt_bean[[target_col]])
+cm_001_dt_bean <- confusionMatrix(pred_001_dt_bean, test_dt_bean[[target_col]])
+cm_0005_dt_bean <- confusionMatrix(pred_0005_dt_bean, test_dt_bean[[target_col]])
 
-acc_001  <- cm_001$overall["Accuracy"]
-acc_0005 <- cm_0005$overall["Accuracy"]
+acc_001_dt_bean  <- cm_001_dt_bean$overall["Accuracy"]
+acc_0005_dt_bean <- cm_0005_dt_bean$overall["Accuracy"]
 
 cat("\n---------------------- Árvore (cp = 0.01) ----------------------\n")
-print(cm_001)
-cat(sprintf("\nAcurácia (cp=0.01): %.4f\n", acc_001))
+print(cm_001_dt_bean)
+cat(sprintf("\nAcurácia (cp=0.01): %.4f\n", acc_001_dt_bean))
 
 cat("\n--------------------- Árvore (cp = 0.005) ----------------------\n")
-print(cm_0005)
-cat(sprintf("\nAcurácia (cp=0.005): %.4f\n", acc_0005))
+print(cm_0005_dt_bean)
+cat(sprintf("\nAcurácia (cp=0.005): %.4f\n", acc_0005_dt_bean))
 ```
 
 ### 5.1.2. Glass Identification Dataset
@@ -426,30 +424,30 @@ train_dt_glass <- glass_df_res[idx_treino_dt_glass, ]
 test_dt_glass  <- glass_df_res[-idx_treino_dt_glass, ]
 
 # Fórmula: alvo ~ todos os preditores
-form <- reformulate(setdiff(names(train_dt_glass), target_col), response = target_col)
+form_dt_glass <- reformulate(setdiff(names(train_dt_glass), target_col), response = target_col)
 
 # Treinar duas árvores com cp diferentes
-tree_cp_001  <- rpart(form, data = train_dt_glass, method = "class", control = rpart.control(cp = 0.01))
-tree_cp_0005 <- rpart(form, data = train_dt_glass, method = "class", control = rpart.control(cp = 0.005))
+cp_001_dt_glass  <- rpart(form_dt_glass, data = train_dt_glass, method = "class", control = rpart.control(cp = 0.01))
+cp_0005_dt_glass <- rpart(form_dt_glass, data = train_dt_glass, method = "class", control = rpart.control(cp = 0.005))
 
 # Prever no conjunto de teste
-pred_001  <- predict(tree_cp_001,  newdata = test_dt_glass, type = "class")
-pred_0005 <- predict(tree_cp_0005, newdata = test_dt_glass, type = "class")
+pred_001_dt_glass  <- predict(cp_001_dt_glass,  newdata = test_dt_glass, type = "class")
+pred_0005_dt_glass <- predict(cp_0005_dt_glass, newdata = test_dt_glass, type = "class")
 
 # Avaliar (matriz de confusão e acurácia)
-cm_001  <- confusionMatrix(pred_001,  test_dt_glass[[target_col]])
-cm_0005 <- confusionMatrix(pred_0005, test_dt_glass[[target_col]])
+cm_001_dt_glass  <- confusionMatrix(pred_001_dt_glass,  test_dt_glass[[target_col]])
+cm_0005_dt_glass <- confusionMatrix(pred_0005_dt_glass, test_dt_glass[[target_col]])
 
-acc_001  <- cm_001$overall["Accuracy"]
-acc_0005 <- cm_0005$overall["Accuracy"]
+acc_001_dt_glass  <- cm_001_dt_glass$overall["Accuracy"]
+acc_0005_dt_glass <- cm_0005_dt_glass$overall["Accuracy"]
 
 cat("\n---------------------- Árvore (cp = 0.01) ----------------------\n")
-print(cm_001)
-cat(sprintf("\nAcurácia (cp=0.01): %.4f\n", acc_001))
+print(cm_001_dt_glass)
+cat(sprintf("\nAcurácia (cp=0.01): %.4f\n", acc_001_dt_glass))
 
 cat("\n--------------------- Árvore (cp = 0.005) ----------------------\n")
-print(cm_0005)
-cat(sprintf("\nAcurácia (cp=0.005): %.4f\n", acc_0005))
+print(cm_0005_dt_glass)
+cat(sprintf("\nAcurácia (cp=0.005): %.4f\n", acc_0005_dt_glass))
 ```
 
 ## 5.2. KNN
@@ -487,46 +485,44 @@ X_test_knn_bean  <- test_knn_bean %>%
   as.data.frame()
 
 y_train_knn_bean <- train_knn_bean[[target_col]]
-y_test  <- test_knn_bean[[target_col]]
+y_test_knn_bean <- test_knn_bean[[target_col]]
 
 stopifnot(is.factor(y_train_knn_bean), is.factor(y_test_knn_bean)) # Verifica se todos os valores são factor (exigido pelo KNN)
 stopifnot(all(sapply(X_train_knn_bean, is.numeric)), all(sapply(X_test_knn_bean, is.numeric))) # Verifica se todos os valores são numéricos (exigido pelo KNN)
 
-# Executar KNN
-k <- 5 # Define a quantidade de K-vizinhos mais próximos
+# Executar KNN para k =5
+k_5_knn_bean <- 5 # Define a quantidade de K-vizinhos mais próximos
 
-pred_k <- knn(
+pred_k_5_knn_bean <- knn(
   train = X_train_knn_bean,   # base de treino (preditores)
   test  = X_test_knn_bean,    # base de teste  (preditores)
   cl    = y_train_knn_bean,   # classes de treino (factor)
-  k     = k          # número de vizinhos
+  k     = k_5_knn_bean        # número de vizinhos
 )
 
 # Avaliar (matriz de confusão e acurácia)
-conf_k <- table(Predito = pred_k, Real = y_test_knn_bean)
-acc_k  <- mean(pred_k == y_test_knn_bean)
+conf_k_5_knn_bean <- table(Predito = pred_k_5_knn_bean, Real = y_test_knn_bean)
+acc_k_5_knn_bean  <- mean(pred_k_5_knn_bean == y_test_knn_bean)
 
-conf_k
-acc_k
+conf_k_5_knn_bean
+acc_k_5_knn_bean
 
+# Executar KNN para k = 10
+k_10_knn_bean <- 10 # Define a quantidade de K-vizinhos mais próximos
 
-
-# Executar KNN
-k_10 <- 10 # Define a quantidade de K-vizinhos mais próximos
-
-pred_k <- knn(
+pred_k_10_knn_bean <- knn(
   train = X_train_knn_bean,   # base de treino (preditores)
   test  = X_test_knn_bean,    # base de teste  (preditores)
   cl    = y_train_knn_bean,   # classes de treino (factor)
-  k     = k          # número de vizinhos
+  k     = k_10_knn_bean       # número de vizinhos
 )
 
 # Avaliar (matriz de confusão e acurácia)
-conf_k <- table(Predito = pred_k, Real = y_test_knn_bean)
-acc_k  <- mean(pred_k == y_test_knn_bean)
+conf_k_10_knn_bean <- table(Predito = pred_k_10_knn_bean, Real = y_test_knn_bean)
+acc_k_10_knn_bean  <- mean(pred_k_10_knn_bean == y_test_knn_bean)
 
-conf_k
-acc_k
+conf_k_10_knn_bean
+acc_k_10_knn_bean
 ```
 
 ### 5.2.2. Glass Identification Dataset
@@ -562,22 +558,39 @@ y_test_knn_glass  <- test_knn_glass[[target_col]]
 stopifnot(is.factor(y_train_knn_glass), is.factor(y_test_knn_glass)) # Verifica se todos os valores são factor (exigido pelo KNN)
 stopifnot(all(sapply(X_train_knn_glass, is.numeric)), all(sapply(X_test_knn_glass, is.numeric))) # Verifica se todos os valores são numéricos (exigido pelo KNN)
 
-# Executar KNN
-k <- 5 # Define a quantidade de K-vizinhos mais próximos
+# Executar KNN para k = 5
+k_5_knn_glass <- 5 # Define a quantidade de K-vizinhos mais próximos
 
-pred_k <- knn(
+pred_k_5_knn_glass <- knn(
   train = X_train_knn_glass,
   test  = X_test_knn_glass,
   cl    = y_train_knn_glass,
-  k     = k,
+  k     = k_5_knn_glass
 )
 
 # Avaliar (matriz de confusão e acurácia)
-conf_k <- table(Predito = pred_k, Real = y_test_knn_glass)
-acc_k  <- mean(pred_k == y_test_knn_glass)
+conf_k_5_knn_glass <- table(Predito = pred_k_5_knn_glass, Real = y_test_knn_glass)
+acc_k_5_knn_glass  <- mean(pred_k_5_knn_glass == y_test_knn_glass)
 
-conf_k
-acc_k
+conf_k_5_knn_glass
+acc_k_5_knn_glass
+
+# Executar KNN para k = 10
+k_10_knn_glass <- 10 # Define a quantidade de K-vizinhos mais próximos
+
+pred_k_10_knn_glass <- knn(
+  train = X_train_knn_glass,
+  test  = X_test_knn_glass,
+  cl    = y_train_knn_glass,
+  k     = k_10_knn_glass
+)
+
+# Avaliar (matriz de confusão e acurácia)
+conf_k_10_knn_glass <- table(Predito = pred_k_10_knn_glass, Real = y_test_knn_glass)
+acc_k_10_knn_glass  <- mean(pred_k_10_knn_glass == y_test_knn_glass)
+
+conf_k_10_knn_glass
+acc_k_10_knn_glass
 ```
 
 ## 5.3. Regressão Logística
@@ -585,6 +598,8 @@ acc_k
 ### 5.3.1. Dry Bean Dataset
 
 ```{r}
+library(caret)
+
 set.seed(123)
 
 head(bean_df_pad)
@@ -614,11 +629,18 @@ p_values <- 2 * (1 - pnorm(abs(z_values)))  # Teste bilateral
 # Mostrar os p-valores
 print(p_values)
 
-prediction <- predict(model, newdata = idx_teste)
+prediction <- predict(model, newdata = idx_teste_rl_bean)
 
-idx_teste$Class
+idx_teste_rl_bean$Class
 
 head(prediction)
+
+# Avaliar (matriz de confusão e acurácia)
+cm_rl_bean <- table(Predito = prediction, Real = idx_teste_rl_bean$Class)
+acc_rl_bean <- mean(prediction == idx_teste_rl_bean$Class)
+
+cm_rl_bean
+acc_rl_bean
 ```
 
 ### 5.3.2. Glass Identification Dataset
@@ -656,6 +678,13 @@ prediction <- predict(model, newdata = idx_teste_rl_glass)
 idx_teste_rl_glass$Class
 
 head(prediction)
+
+# Avaliar (matriz de confusão e acurácia)
+cm_rl_glass <- table(Predito = prediction, Real = idx_teste_rl_glass$Class)
+acc_rl_glass <- mean(prediction == idx_teste_rl_glass$Class)
+
+cm_rl_glass
+acc_rl_glass
 ```
 
 # 6. Estratégia da Divisão da Base de Dados
@@ -669,6 +698,10 @@ Adotou-se a estratégia de divisão Holdout para a separação dos dados em trei
 
 # 7. Medidas de Avaliação
 
-matriz de confusão e acurácia
+Para a avaliação dos classificadores, foram utilizadas duas medidas principais: a matriz de confusão e a acurácia. A matriz de confusão consiste em uma tabela que organiza as previsões do modelo em relação aos valores reais, discriminando corretamente os acertos e os erros de classificação para cada classe. A acurácia, por sua vez, expressa a proporção de instâncias corretamente classificadas pelo modelo em relação ao total de instâncias avaliadas, sendo calculada pela fórmula:
+
+Acurácia = (TP + TN) / (TP + TN + FP + FN)
+
+em que TP (true positive) e TN (true negative) representam as previsões corretas, enquanto FP (false positive) e FN (false negative) correspondem às classificações incorretas.
 
 # 8. Resultados
