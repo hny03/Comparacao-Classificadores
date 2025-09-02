@@ -1,17 +1,35 @@
 ---
-title: "trabalho"
+title: "Comparação de Classificadores"
+subtitle: "Ciência de Dados I"
 format:
   pdf:
-    pdf-engine: lualatex # bom para PT-BR e acentos
+    pdf-engine: lualatex
     toc: true
     number-sections: true
     code-overflow: wrap
+    include-in-header:
+      text: |
+        \usepackage{indentfirst}   % recua também o 1º parágrafo após título/seção
+        \setlength{\parindent}{2em} % tamanho do recuo (ajuste como preferir)
+        \setlength{\parskip}{1em}   % espaço entre parágrafos (zero se não quiser espaço extra)
+        \usepackage{fvextra}
+        % Blocos de CÓDIGO (mantém highlight e quebra)
+        \DefineVerbatimEnvironment{Highlighting}{Verbatim}{breaklines,breakanywhere,commandchars=\\\{\}}
+        % Blocos de OUTPUT (quebra linhas)
+        \RecustomVerbatimEnvironment{verbatim}{Verbatim}{breaklines,breakanywhere}
+        \RecustomVerbatimEnvironment{Verbatim}{Verbatim}{breaklines,breakanywhere}
 lang: pt-BR
 author: 
   - "Hanny Araujo Borges - 12221BSI249"
   - "Igor Melo Mesquita - 12221BSI206"
   - "Maria Eduarda Dutra Silva - 12221BSI228"
 ---
+
+```{r}
+#| include: false
+options(width = 70)                     # largura do console
+knitr::opts_chunk$set(max.print = 100)  # limita impressão gigante
+```
 
 ```{r}
 library(readxl)
@@ -201,6 +219,8 @@ ggplot(df, aes(x = Class, y = n, fill = Class)) +
 
 # Ferramenta
 
+Os experimentos foram realizados na linguagem **R**, em ambiente RStudio, utilizando pacotes amplamente empregados na área de ciência de dados. O pré-processamento e a manipulação das bases foram feitos principalmente com o pacote **dplyr**, enquanto a execução dos algoritmos contou com pacotes específicos: **class** (para o KNN), **nnet** (para a Regressão Logística Multinomial), **rpart** (para a Árvore de Decisão) e **caret** (para avaliação por meio da matriz de confusão e cálculo da acurácia). Essa combinação de ferramentas possibilitou a implementação consistente dos experimentos, assegurando reprodutibilidade e clareza na comparação dos diferentes algoritmos de classificação.
+
 # Dry Bean Dataset
 
 ## Pré-processamento
@@ -310,8 +330,13 @@ bean_df_pad %>%
 Adotou-se a estratégia de divisão Holdout para a separação dos dados em treino e teste. Essa técnica consiste em particionar a base em dois subconjuntos mutuamente exclusivos: um destinado ao treinamento do modelo e outro reservado para a sua avaliação. Optou-se por utilizar aproximadamente 2/3 dos dados para o treino e 1/3 para o teste, de modo a garantir que o classificador tivesse acesso a uma quantidade suficiente de instâncias para o aprendizado, ao mesmo tempo em que fosse avaliado em exemplos não vistos durante o treinamento. Essa abordagem permite estimar o desempenho do modelo de forma direta e eficiente, sendo amplamente utilizada em cenários com bases de dados de tamanho moderado.
 
 ```{r}
-# ----- Exemplo de como foi incluído o Holdout nos algoritmos -----
-# slice_sample(prop = 2/3) # Realiza a partição da base para treino e teste em 2/3, sendo 2/3 para treino e 1/3 para teste
+set.seed(42)  # Reprodutibilidade
+
+idx_treino_bean <- bean_df_res %>%
+  mutate(row_id = dplyr::row_number()) %>%
+  group_by(Class) %>%
+  slice_sample(prop = 2/3) %>% # Realiza a partição da base para treino e teste
+  pull(row_id)
 ```
 
 ## Algoritmos
@@ -325,15 +350,9 @@ stopifnot(exists("bean_df_res")) # Verifica se o dataset existe
 stopifnot('Class' %in% names(bean_df_res)) # Verifica se a classe existe
 bean_df_res$Class <- as.factor(bean_df_res$Class) # Garante que a classe é factor
 
-# Índices por classe
-idx_treino_dt_bean <- bean_df_res %>%
-  mutate(row_id = dplyr::row_number()) %>%
-  group_by(Class) %>%
-  slice_sample(prop = 2/3) %>% # Realiza a partição da base para treino e teste
-  pull(row_id)
-
-train_dt_bean <- bean_df_res[idx_treino_dt_bean, ]
-test_dt_bean  <- bean_df_res[-idx_treino_dt_bean, ]
+# Armazena a parte de treino e base separada em idx_treino_bean
+train_dt_bean <- bean_df_res[idx_treino_bean, ]
+test_dt_bean  <- bean_df_res[-idx_treino_bean, ]
 
 # Fórmula: alvo ~ todos os preditores
 form_dt_bean <- reformulate(setdiff(names(train_dt_bean), 'Class'), response = 'Class')
@@ -356,15 +375,9 @@ stopifnot(exists("bean_df_res")) # Verifica se o dataset existe
 stopifnot('Class' %in% names(bean_df_res)) # Verifica se a classe existe
 bean_df_res$Class <- as.factor(bean_df_res$Class) # Garante que a classe é factor
 
-# Índices por classe
-idx_treino_knn_bean <- bean_df_res %>%
-  mutate(row_id = dplyr::row_number()) %>%
-  group_by(Class) %>%
-  slice_sample(prop = 2/3) %>% # Realiza a partição da base para treino e teste
-  pull(row_id)
-
-train_knn_bean <- bean_df_res[idx_treino_knn_bean, ]
-test_knn_bean  <- bean_df_res[-idx_treino_knn_bean, ]
+# Armazena a parte de treino e base separada em idx_treino_bean
+train_knn_bean <- bean_df_res[idx_treino_bean, ]
+test_knn_bean  <- bean_df_res[-idx_treino_bean, ]
 
 # Matriz de preditores (x) e vetores de classe (y)
 X_train_knn_bean <- train_knn_bean %>%
@@ -404,7 +417,7 @@ pred_k_p2_knn_bean <- knn(
 
 ### Regressão Logística
 
-#### (\*) Metodologia do Modelo de Regressão Logística Multinomial
+#### Metodologia do Modelo de Regressão Logística Multinomial
 
 A regressão logística multinomial é um modelo estatístico utilizado para prever variáveis dependentes categóricas com mais de duas classes. No presente estudo, este modelo foi aplicado para classificar amostras de acordo com suas características, conforme descrito a seguir.
 
@@ -440,17 +453,10 @@ O funcionamento da regressão logística multinomial pode ser resumido como um p
 
 ```{r}
 set.seed(42)
- 
-# Índices por classe
-idx_treino_rl_bean <- bean_df_pad %>%
-  mutate(row_id = dplyr::row_number()) %>%
-  group_by(Class) %>%
-  slice_sample(prop = 2/3) %>% # Realiza a partição da base para treino e teste
-  pull(row_id)
 
-
-train_rl_bean <- bean_df_res[idx_treino_knn_bean, ]
-test_rl_bean  <- bean_df_res[-idx_treino_knn_bean, ]
+# Armazena a parte de treino e base separada em idx_treino_bean
+train_rl_bean <- bean_df_res[idx_treino_bean, ]
+test_rl_bean  <- bean_df_res[-idx_treino_bean, ]
 
 
 model_rl_bean <- multinom(Class ~ AspectRation + Eccentricity + EquivDiameter + Extent + Solidity + roundness + Compactness + ShapeFactor1 + ShapeFactor2 + ShapeFactor3 + ShapeFactor4, data = train_rl_bean)
@@ -590,8 +596,13 @@ glass_df_pad %>%
 Adotou-se a estratégia de divisão Holdout para a separação dos dados em treino e teste. Essa técnica consiste em particionar a base em dois subconjuntos mutuamente exclusivos: um destinado ao treinamento do modelo e outro reservado para a sua avaliação. Optou-se por utilizar aproximadamente 2/3 dos dados para o treino e 1/3 para o teste, de modo a garantir que o classificador tivesse acesso a uma quantidade suficiente de instâncias para o aprendizado, ao mesmo tempo em que fosse avaliado em exemplos não vistos durante o treinamento. Essa abordagem permite estimar o desempenho do modelo de forma direta e eficiente, sendo amplamente utilizada em cenários com bases de dados de tamanho moderado.
 
 ```{r}
-# ----- Exemplo de como foi incluído o Holdout nos algoritmos -----
-# slice_sample(prop = 2/3) # Realiza a partição da base para treino e teste em 2/3, sendo 2/3 para treino e 1/3 para teste
+set.seed(42)  # Reprodutibilidade
+
+idx_treino_glass <- glass_df_res %>%
+  mutate(row_id = dplyr::row_number()) %>%
+  group_by(Class) %>%
+  slice_sample(prop = 2/3) %>% # Realiza a partição da base para treino e teste
+  pull(row_id)
 ```
 
 ## Algoritmos
@@ -605,15 +616,9 @@ stopifnot(exists("glass_df_res")) # Verifica se o dataset existe
 stopifnot('Class' %in% names(glass_df_res)) # Verifica se a classe existe
 glass_df_res$Class <- as.factor(glass_df_res$Class) # Garante que a classe é factor
 
-# Índices por classe
-idx_treino_dt_glass <- glass_df_res %>%
-  mutate(row_id = dplyr::row_number()) %>%
-  group_by(Class) %>%
-  slice_sample(prop = 2/3) %>% # Realiza a partição da base para treino e teste
-  pull(row_id)
-
-train_dt_glass <- glass_df_res[idx_treino_dt_glass, ]
-test_dt_glass  <- glass_df_res[-idx_treino_dt_glass, ]
+# Armazena a parte de treino e base separada em idx_treino_bean
+train_dt_glass <- glass_df_res[idx_treino_glass, ]
+test_dt_glass  <- glass_df_res[-idx_treino_glass, ]
 
 # Fórmula: alvo ~ todos os preditores
 form_dt_glass <- reformulate(setdiff(names(train_dt_glass), 'Class'), response = 'Class')
@@ -636,15 +641,9 @@ stopifnot(exists("glass_df_res")) # Verifica se o dataset existe
 stopifnot('Class' %in% names(glass_df_res)) # Verifica se a classe existe
 glass_df_res$Class <- as.factor(glass_df_res$Class) # Garante que a classe é factor
 
-# Índices por classe
-idx_treino_knn_glass <- glass_df_res %>%
-  mutate(row_id = dplyr::row_number()) %>%
-  group_by(Class) %>%
-  slice_sample(prop = 2/3) %>% # Realiza a partição da base para treino e teste
-  pull(row_id)
-
-train_knn_glass <- glass_df_res[idx_treino_knn_glass, ]
-test_knn_glass  <- glass_df_res[-idx_treino_knn_glass, ]
+# Armazena a parte de treino e base separada em idx_treino_bean
+train_knn_glass <- glass_df_res[idx_treino_glass, ]
+test_knn_glass  <- glass_df_res[-idx_treino_glass, ]
 
 # Matriz de preditores (x) e vetores de classe (y)
 X_train_knn_glass <- train_knn_glass %>% select(-all_of('Class')) %>% as.data.frame()
@@ -679,18 +678,14 @@ pred_k_p2_knn_glass <- knn(
 
 ### Regressão Logística
 
-Ver seção 4.3.3.4. para explicação da **(\*) Metodologia do Modelo de Regressão Logística Multinomial.**
+Ver seção 4.3.3.1 para explicação da **Metodologia do Modelo de Regressão Logística Multinomial.**
 
 ```{r}
 set.seed(42)
-# Definido partição de treino
-idx_treino_rl_glass <- glass_df_pad %>%
-  mutate(row_id = dplyr::row_number()) %>%
-  group_by(Class) %>%
-  slice_sample(prop = 2/3) %>% # Realiza a partição da base para treino e teste
-  pull(row_id)
-train_rl_glass <- glass_df_res[idx_treino_rl_glass, ]
-test_rl_glass <- glass_df_res[-idx_treino_rl_glass, ]
+
+# Armazena a parte de treino e base separada em idx_treino_bean
+train_rl_glass <- glass_df_res[idx_treino_glass, ]
+test_rl_glass <- glass_df_res[-idx_treino_glass, ]
  
  
 model <- multinom(Class ~ RI + Na + Mg + Al + Si + K + Ca + Ba + Fe, data = train_rl_glass)
@@ -783,27 +778,7 @@ print(paste("A acurácia do dataset GLASS IDENTIFICATION é superior considerand
 # Resultados
 
 ```{r}
-comparative_table_glass <- data.frame(
-  Dataset = "Glass Identification",
-  Classificator = c("Árvore de Decisão", "KNN", "Regressão Logística"),
-  Accuracy = c(acc_p2_dt_glass,acc_k_p1_knn_glass, acc_rl_glass)
-)
-
-comparative_table_bean <- data.frame(
-  Dataset = "Dry Bean",
-  Classificator = c("Árvore de Decisão", "KNN", "Regressão Logística"),
-  Accuracy = c(acc_p2_dt_bean,acc_k_p2_knn_bean, acc_rl_bean_less_att)
-)
-
-comparative_table <- comparative_table_bean %>% 
-  union(comparative_table_glass)
-
-comparative_table
-```
-
-Matrizes de confusão
-
-```{r}
+# Função utilizada para criação das matrizes de confusão
 plot_matrix <- function(data, nome){
   ggplot(data, aes(x = Reference, y = Prediction, fill = Freq)) +
   geom_tile() +
@@ -814,9 +789,22 @@ plot_matrix <- function(data, nome){
 }
 ```
 
-```{r}
+## Dry Bean Dataset
 
-# DRY BEANS
+```{r}
+# -------------------- Acurácia --------------------
+
+comparative_table_bean <- data.frame(
+  Dataset = "Dry Bean",
+  Classificator = c("Árvore de Decisão", "KNN", "Regressão Logística"),
+  Accuracy = c(acc_p2_dt_bean,acc_k_p2_knn_bean, acc_rl_bean_less_att)
+)
+
+comparative_table_bean
+```
+
+```{r}
+# -------------------- Matriz de Confusão --------------------
 
 # Extrair os dados da matriz de confusão e definir modelos
 cm_dt_bean <- as.data.frame(conf_p2_dt_bean$table)
@@ -831,15 +819,33 @@ cm_rl_bean$model <- "Regressão Logística"
 # Combinar as matrizes de confusão
 cm_beans <- rbind(cm_dt_bean, cm_knn_bean, cm_rl_bean)
 
-
 # Plotar as matrizes de confusão
 plot_matrix(cm_dt_bean, "Dry Beans")
 plot_matrix(cm_knn_bean, "Dry Beans")
 plot_matrix(cm_rl_bean, "Dry Beans")
 ```
 
+No Dry Beans, observou-se que a Regressão Logística apresentou o melhor desempenho em termos de acurácia, seguida pelo KNN e, por último, pela Árvore de Decisão. Esse resultado pode ser explicado pela natureza dos atributos do conjunto: as variáveis correspondem a medidas geométricas e fatores de forma já derivados, muitos deles fortemente correlacionados e próximos de uma relação linear com as classes. A regressão logística, por ser um modelo paramétrico, consegue explorar bem essas relações globais quando há grande quantidade de dados, além de se beneficiar da padronização aplicada no pré-processamento, o que favorece a convergência do modelo.
+
+O KNN obteve desempenho intermediário. Isso se deve ao fato de que o algoritmo depende fortemente da proximidade entre instâncias, e no caso de variedades de feijão com características muito semelhantes, os vizinhos podem pertencer a classes diferentes, o que aumenta o número de erros. Ainda assim, o KNN se mostrou competitivo, principalmente porque a normalização min–max aplicada no pré-processamento garantiu que todos os atributos contribuíssem de forma equilibrada no cálculo das distâncias.
+
+A Árvore de Decisão foi o algoritmo com menor desempenho. O motivo principal é que esse classificador tende a criar divisões eixos-paralelas no espaço dos atributos, o que não é suficiente para capturar fronteiras de decisão mais sutis e contínuas, como as que distinguem variedades de feijão. Embora valores menores de *cp* tenham aumentado a complexidade da árvore e melhorado levemente os resultados, o modelo ainda permaneceu inferior aos demais.
+
+## Glass Identification Dataset
+
 ```{r}
-# GLASS IDENTIFICATION
+# -------------------- Acurácia --------------------
+comparative_table_glass <- data.frame(
+  Dataset = "Glass Identification",
+  Classificator = c("Árvore de Decisão", "KNN", "Regressão Logística"),
+  Accuracy = c(acc_p2_dt_glass,acc_k_p1_knn_glass, acc_rl_glass)
+)
+
+comparative_table_glass
+```
+
+```{r}
+# -------------------- Matriz de Confusão --------------------
 
 # Extrair os dados da matriz de confusão e definir modelos
 cm_dt_glass <- as.data.frame(conf_p2_dt_glass$table)
@@ -860,3 +866,19 @@ plot_matrix(cm_dt_glass, "Glass identification")
 plot_matrix(cm_knn_glass, "Glass identification")
 plot_matrix(cm_rl_glass, "Glass identification")
 ```
+
+No Glass, a ordem de desempenho se inverteu parcialmente: o KNN apresentou a maior acurácia, seguido pela Árvore de Decisão, e por último a Regressão Logística. Esse comportamento está relacionado às características da base, que é pequena (214 instâncias), desbalanceada e com classes muito próximas em termos de composição química.
+
+O KNN apresentou a melhor performance porque o método lida bem com padrões locais, aproveitando a proximidade entre instâncias semelhantes mesmo em um espaço não linear. Em bases pequenas como o Glass, a ausência de suposições paramétricas faz com que o KNN consiga se adaptar melhor a regiões complexas do espaço de atributos, desde que os dados estejam normalizados.
+
+A Árvore de Decisão obteve desempenho intermediário, superando a Regressão Logística. Isso se deve ao fato de que árvores conseguem capturar interações não lineares entre os atributos químicos, formando divisões que refletem combinações específicas de valores. Contudo, a limitação de profundidade e a sensibilidade a ruídos ainda reduzem seu desempenho em relação ao KNN.
+
+A Regressão Logística, por sua vez, apresentou o pior desempenho no Glass. A baixa acurácia pode ser atribuída ao tamanho reduzido do conjunto e à natureza das classes: as fronteiras entre tipos de vidro dificilmente são lineares, o que limita a capacidade do modelo de separar adequadamente as categorias. Além disso, o desbalanceamento das classes aumenta a instabilidade dos coeficientes estimados, mesmo após a padronização das variáveis.
+
+## Comparação Geral e Implicações
+
+Os resultados mostram que não existe um único algoritmo superior em todos os contextos; o desempenho depende das características do conjunto de dados. Em bases grandes, com atributos derivados e relações mais próximas da linearidade, como no Dry Beans, a Regressão Logística se mostrou a mais eficaz. Já em bases pequenas e com fronteiras de decisão complexas, como no Glass, métodos não paramétricos (KNN e Árvore) superaram a RL.
+
+Além disso, o estudo evidencia a importância do pré-processamento: a normalização (re-escala para KNN e padronização para RL) foi essencial para que os algoritmos funcionassem adequadamente, e a redução de dimensionalidade no Dry Beans contribuiu para reduzir redundâncias, melhorando o desempenho dos modelos.
+
+Esses achados estão em consonância com a teoria de aprendizado de máquina: modelos paramétricos tendem a ser favorecidos em conjuntos grandes e bem estruturados, enquanto modelos baseados em vizinhança ou árvores se beneficiam quando o espaço de decisão é mais irregular ou quando há poucos dados disponíveis.
