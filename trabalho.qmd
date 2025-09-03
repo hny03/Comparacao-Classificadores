@@ -44,21 +44,15 @@ library(class)
 
 # Introdução e Objetivos
 
-A área de Ciência de Dados tem se mostrado fundamental para a extração de conhecimento e suporte à tomada de decisão a partir de grandes volumes de dados. Dentro deste campo, a classificação supervisionada se destaca como uma das tarefas mais comuns e importantes, permitindo a categorização de novos dados em classes pré-definidas com base em um conjunto de dados previamente rotulado. A escolha do algoritmo de classificação e seu correto ajuste são etapas cruciais que impactam diretamente o desempenho e a precisão do modelo final.
-
-Este trabalho, realizado no âmbito da disciplina de Ciência de Dados, tem como objetivo principal aplicar, avaliar e interpretar o desempenho de diferentes algoritmos de classificação supervisionada. Para isso, serão utilizadas duas bases de dados públicas com características distintas: o *Dry Bean Dataset* e o *Glass Identification Dataset*.
+Este trabalho de comparação de classificadores foi realizado com o objetivo de analisar as particularidades de três diferentes algoritmos de classificação, de modo a compreender melhor o funcionamento e resultados obtidos através de cada um, ranqueando os melhores e piores para diferentes bases de dados utilizando diferentes parâmetros. De tal forma, foram escolhidos os algoritmos de Árvore de Decisão, KNN e Regressão Logística; sendo o último escolhido daqueles que não foram estudados em sala de aula.
 
 # Descrição das Bases de Dados
 
-Para a realização deste estudo, foram selecionadas duas bases de dados públicas, que são descritas a seguir.
+Para a realização deste trabalho, foram selecionadas duas bases de dados públicas, que são descritas a seguir.
 
 ## Dry Bean Dataset
 
-Esta base de dados foi obtida a partir de um estudo que utilizou um sistema de visão computacional para extrair características de imagens de grãos de feijão. O objetivo é classificar os grãos em sete variedades diferentes.
-
 -   Link para a fonte: <https://www.kaggle.com/datasets/joebeachcapital/dry-beans>
-
--   Descrição Geral:
 
 -   Número de Instâncias: 13.611.
 
@@ -117,16 +111,14 @@ ggplot(df, aes(x = Class, y = n, fill = Class)) +
   labs(title = "Distribuição das Classes de Feijão",
        x = "Classe",
        y = "Frequência") +
-  theme_minimal()
+  theme_minimal() +
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank())
 ```
 
 ## Glass Identification Dataset
 
-Esta base de dados foi criada para investigações de ciência forense, onde fragmentos de vidro encontrados em cenas de crime podem ser usados como evidência se corretamente identificados. A classificação se baseia na composição química do vidro.
-
 -   Link para a fonte: <https://archive.ics.uci.edu/dataset/42/glass+identification>
-
--   Descrição Geral:
 
 -   Número de Instâncias: 214.
 
@@ -214,12 +206,14 @@ ggplot(df, aes(x = Class, y = n, fill = Class)) +
   labs(title = "Distribuição das Classes de Vidro",
        x = "Classe",
        y = "Frequência") +
-  theme_minimal()
+  theme_minimal() +
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank())
 ```
 
 # Ferramenta
 
-Os experimentos foram realizados na linguagem **R**, em ambiente RStudio, utilizando pacotes amplamente empregados na área de ciência de dados. O pré-processamento e a manipulação das bases foram feitos principalmente com o pacote **dplyr**, enquanto a execução dos algoritmos contou com pacotes específicos: **class** (para o KNN), **nnet** (para a Regressão Logística Multinomial), **rpart** (para a Árvore de Decisão) e **caret** (para avaliação por meio da matriz de confusão e cálculo da acurácia). Essa combinação de ferramentas possibilitou a implementação consistente dos experimentos, assegurando reprodutibilidade e clareza na comparação dos diferentes algoritmos de classificação.
+Para a execução dos experimentos realizados neste trabalho, foi utilizada a linguagem R no ambiente RStudio. Juntamente, foram usadas várias bibliotecas: readxl para ler os datasets em arquivos excel; data.table e dplyr para manipulação de dados; ggplot2 para criação de gráficos; nnet para implementações no modelo de Regressão Logística; rpart para implementações no modelo de Árvore de Decisão; caret para treinamento dos modelos; e class para implementações no modelo KNN.
 
 # Dry Bean Dataset
 
@@ -229,7 +223,7 @@ Na base Dry Beans, que contém 13.611 instâncias e 16 atributos numéricos deri
 
 ### Amostragem
 
-A amostragem foi considerada na base Dry Beans devido ao grande número de instâncias (13.611), permitindo reduzir o custo computacional durante os experimentos e possibilitando a execução de testes preliminares com subconjuntos menores de dados, garantindo maior eficiência na comparação entre classificadores. Optou-se pela amostragem estratificada, de modo a preservar as proporções originais das sete classes de feijões no subconjunto selecionado, o que se mostra essencial diante do desbalanceamento existente entre as classes, já que algumas variedades possuem muito mais instâncias que outras. Assim, essa estratégia assegura que o conjunto reduzido de dados mantenha a diversidade e representatividade necessárias para uma avaliação consistente do desempenho dos algoritmos de classificação.
+Devido a grande quantidade de instâncias do dataset Dry Beans, a amostragem se mostrou muito necessária, afinal, reduzindo o número de instâncias, reduz-se o esforço computacional preciso para processar os dados. Desta forma, escolheu-se a técnica de amostragem estratificada, de modo que todas as classes fossem representadas de maneira proporcional ao número de instâncias destas; essa técnica de proporção foi utilizada em decorrência do desbalanceamento das classes do dataset, ou seja, foi utilizada visando um balanceamento.
 
 ```{r}
 set.seed(42) # Reprodutibilidade
@@ -252,12 +246,14 @@ ggplot(df, aes(x = Class, y = n, fill = Class)) +
   labs(title = "Distribuição das Classes de Feijão",
        x = "Classe",
        y = "Frequência") +
-  theme_minimal()
+  theme_minimal() +
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank())
 ```
 
 ### Estratégia de Divisão da Base de Dados
 
-Adotou-se a estratégia de divisão Holdout para a separação dos dados em treino e teste. Essa técnica consiste em particionar a base em dois subconjuntos mutuamente exclusivos: um destinado ao treinamento do modelo e outro reservado para a sua avaliação. Optou-se por utilizar aproximadamente 2/3 dos dados para o treino e 1/3 para o teste, de modo a garantir que o classificador tivesse acesso a uma quantidade suficiente de instâncias para o aprendizado, ao mesmo tempo em que fosse avaliado em exemplos não vistos durante o treinamento. Essa abordagem permite estimar o desempenho do modelo de forma direta e eficiente, sendo amplamente utilizada em cenários com bases de dados de tamanho moderado.
+Para a separação do dataset entre dados de treino e de teste, utilizou-se a técnica Holdout, que consiste em fazer uma única partição da amostra em 3 partes, sendo 2/3 para treino e 1/3 para teste.
 
 ```{r}
 set.seed(42) # Reprodutibilidade
@@ -271,7 +267,19 @@ idx_treino_bean <- bean_df_bal %>%
 
 ### Redução de Dimensionalidade
 
-Na redução de dimensionalidade, observou-se que diversos atributos da base são derivados de outros já existentes, apresentando, portanto, redundância. Por exemplo, o atributo *AspectRation* é calculado a partir da razão entre *MajorAxisLength* e *MinorAxisLength*, enquanto *Roundness* e *Compactness* utilizam *Area* e *Perimeter* em suas fórmulas. Dessa forma, optou-se por manter os atributos derivados e remover os fundamentais. Essa abordagem preserva a informação essencial em métricas normalizadas e reduz a redundância entre variáveis, conforme ilustrado na tabela apresentada nesta seção.
+No dataset Dry Beans, observou-se que muitos atributos eram derivados de outros, e, portanto, havia redundância na base. Devido a isso, optou-se por utilizar a redução de dimensionalidade, a fim de retirar os atributos fundamentais, ou seja, os atributos que, a partir deles, novos atributos surgiam. Por exemplo, o atributo *AspectRation* é calculado a partir da razão entre *MajorAxisLength* e *MinorAxisLength*, então *MajorAxisLenght* e *MinorAxisLength* seriam retirados.
+
+-   Os atributos retirados foram:
+
+    -   MinorAxisLength
+
+    -   MajorAxisLength
+
+    -   Area
+
+    -   Perimeter
+
+    -   ConvexArea
 
 ```{r}
 # Retirada das colunas fundamentais 
@@ -281,7 +289,7 @@ bean_df_bal <- bean_df_bal %>%
 
 ### Normalização
 
-No processo de pré-processamento dos dados, adotou-se a normalização das variáveis preditoras, etapa fundamental para a execução de algoritmos de classificação baseados em medidas de distância e em modelos estatísticos multivariados. Foram utilizadas duas abordagens distintas conforme a necessidade de cada algoritmo: a normalização por re-escala e a padronização. A normalização por re-escala transforma os atributos para um intervalo comum, tipicamente \[0, 1\], evitando que variáveis com grande amplitude numérica dominem o cálculo das distâncias, como ocorre no KNN. Já a padronização converte cada atributo para média zero e desvio-padrão unitário, garantindo comparabilidade em algoritmos como a regressão logística, que assumem variáveis centradas e na mesma escala. Dessa forma, a aplicação dessas técnicas assegurou que todos os atributos contribuíssem de forma equilibrada no processo de classificação, aumentando a robustez e a interpretabilidade dos resultados obtidos.
+Analisando o dataset, é visível que ele possui instâncias com grande amplitude numérica, o que é ruim para algoritmos como KNN e Regressão Logística (que foram escolhidos para a realização deste trabalho). Sendo assim, foi necessária a normalização dos dados para que, conforme a necessidade de cada algoritmo, pudesse ter um melhor resultado. No caso do KNN, a normalização escolhida foi a re-escalar, que transforma os dados em um intervalo \[0, 1\], facilitando o cálculo das distâncias. Já para a Regressão Logística, escolheu-se a padronização, que converte os dados para uma média zero e desvio padrão 1, equilibrando as variáveis e facilitando a interpretação dos coeficientes.
 
 #### Re-escalar
 
@@ -417,48 +425,41 @@ pred_k_p2_knn_bean <- knn(
 
 #### Metodologia do Modelo de Regressão Logística Multinomial
 
-A regressão logística multinomial é um modelo estatístico utilizado para prever variáveis dependentes categóricas com mais de duas classes. No presente estudo, este modelo foi aplicado para classificar amostras de acordo com suas características, conforme descrito a seguir.
+A regressão logística multinomial é um modelo estatístico utilizado para prever bases que contenham variáveis dependentes e mais de duas categorias. O funcionamento da metodologia pode ser resumido como um processo de aprendizado contínuo: o modelo começa com estimativas iniciais e compara suas previsões com os resultados observados, após isso, reajusta seus parâmetros e repete o processo até estabilizar. Assim, captura padrões nos dados e os utiliza para realizar classificações em instâncias futuras. O passo a passo descrito seria algo como:
 
-1.  **Preparação dos dados**
+1.  **Cálculo das probabilidades**
 
-    Inicialmente, os dados foram organizados de forma a conter as variáveis independentes (atributos) e a variável resposta (classe). Uma das classes foi definida automaticamente como referência, servindo de base para a comparação com as demais.
+    A cada iteração, os dados são processados e o modelo gera pontuações para cada classe. Essas pontuações são transformadas em probabilidades através de uma função de normalização, garantindo que a soma das probabilidades de todas as classes seja igual a 1.
 
-2.  **Definição inicial dos parâmetros**
-
-    O modelo associa pesos (parâmetros) a cada variável em cada classe. Esses pesos indicam a intensidade e a direção da influência de uma característica sobre a probabilidade de pertencimento a determinada classe. No início do processo, os valores dos pesos são atribuídos de forma arbitrária, próximos de zero.
-
-3.  **Cálculo das probabilidades**
-
-    A cada iteração, os dados são processados e o modelo gera pontuações para cada classe. Essas pontuações são transformadas em probabilidades através de uma função de normalização, garantindo que a soma das probabilidades de todas as classes seja igual a 100%.
-
-4.  **Comparação com os valores reais**
+2.  **Comparação com os valores reais**
 
     As probabilidades estimadas são comparadas com os valores observados na base de dados. O modelo verifica o grau de acerto e erro das previsões em relação às classes reais atribuídas a cada observação.
 
-5.  **Ajuste dos pesos**
+3.  **Ajuste dos pesos**
 
-    Com base na diferença entre valores previstos e reais, os pesos associados às variáveis são ajustados. Esse processo corrige a influência das variáveis, reforçando aquelas que ajudam na classificação correta e reduzindo o impacto daquelas que conduzem a erros.
+    Com base na diferença entre valores previstos e reais, os pesos associados às variáveis são ajustados. Esse processo corrige a influência das variáveis, reforçando aquelas que ajudam na classificação correta e reduzindo o impacto daquelas que conduzem a erros. Abaixo segue exemplo de como essas correspondências são registradas, na parte de "*Coefficients*":
 
-6.  **Iteração e convergência**
+    ```{r}
+    set.seed(42)
+
+    # Armazena a parte de treino e base separada em idx_treino_bean
+    train_rl_bean <- bean_df_pad[idx_treino_bean, ]
+    test_rl_bean  <- bean_df_pad[-idx_treino_bean, ]
+
+    # Modelo gerado com atributos aleatórios, apenas para exemplificação da distribuição dos pesos
+    model_example <-  multinom(Class ~ Eccentricity + EquivDiameter + Extent + Solidity, data = train_rl_bean, trace = FALSE)
+
+    model_example
+    ```
+
+4.  **Iteração e convergência**
 
     O ciclo de cálculo de probabilidades, comparação com os valores reais e ajuste dos pesos é repetido sucessivamente. O processo segue até que os ajustes se tornem mínimos, caracterizando a convergência do modelo. Nesse ponto, considera-se que o modelo aprendeu a relação entre atributos e classes.
 
-7.  **Modelo final e aplicação**
-
-    Após a convergência, o modelo retém um conjunto de pesos ajustados para cada classe. Esses parâmetros permitem identificar quais variáveis exercem maior influência na diferenciação entre as classes. Em novos dados, o modelo aplica os pesos, calcula as probabilidades de cada classe e retorna como previsão a classe com maior probabilidade associada.
-
-O funcionamento da regressão logística multinomial pode ser resumido como um processo de aprendizado iterativo: o modelo começa com estimativas iniciais, compara suas previsões com os resultados observados, ajusta seus parâmetros e repete o processo até estabilizar. Dessa forma, consegue capturar padrões nos dados e utilizá-los para realizar classificações em situações futuras.
-
 ```{r}
-set.seed(42)
+# Continuação do algoritmo pós divisão de treino e teste
+model_rl_bean <- multinom(Class ~ AspectRation + Eccentricity + EquivDiameter + Extent + Solidity + roundness + Compactness + ShapeFactor1 + ShapeFactor2 + ShapeFactor3 + ShapeFactor4, data = train_rl_bean, trace = FALSE) 
 
-# Armazena a parte de treino e base separada em idx_treino_bean
-train_rl_bean <- bean_df_pad[idx_treino_bean, ]
-test_rl_bean  <- bean_df_pad[-idx_treino_bean, ]
-
-
-model_rl_bean <- multinom(Class ~ AspectRation + Eccentricity + EquivDiameter + Extent + Solidity + roundness + Compactness + ShapeFactor1 + ShapeFactor2 + ShapeFactor3 + ShapeFactor4, data = train_rl_bean)
- 
 coefs <- summary(model_rl_bean)$coefficients # pesos atribuidos a cada atributo de acordo com a classe
  
 prediction_rl_bean <- predict(model_rl_bean, newdata = test_rl_bean)
@@ -482,18 +483,18 @@ important_vars_sorted <- important_vars[order(-important_vars$MaxValue), ]
 # Mostrar as variáveis mais importantes
 head(important_vars_sorted)
  
-model_rl_bean_less_att <- multinom(Class ~  EquivDiameter + roundness + ShapeFactor1 + ShapeFactor4, data = train_rl_bean)
+model_rl_bean_less_att <- multinom(Class ~  EquivDiameter + roundness + ShapeFactor1 + ShapeFactor4, data = train_rl_bean, trace = FALSE)
 coefs_bean_less_att <- summary(model_rl_bean_less_att)$coefficients # pesos atribuidos a cada atributo de acordo com a classe
 prediction_rl_bean_less_att <- predict(model_rl_bean_less_att, newdata = test_rl_bean)
 ```
 
 ## Medidas de Avaliação
 
-Para a avaliação dos classificadores, foram utilizadas duas medidas principais: a matriz de confusão e a acurácia. A matriz de confusão consiste em uma tabela que organiza as previsões do modelo em relação aos valores reais, discriminando corretamente os acertos e os erros de classificação para cada classe. A acurácia, por sua vez, expressa a proporção de instâncias corretamente classificadas pelo modelo em relação ao total de instâncias avaliadas, sendo calculada pela fórmula:
+Para realizar a avaliação dos classificadores, utilizou-se duas medidas principais: a matriz de confusão e a acurácia. A matriz de confusão é uma tabela usada para distinguir os tipos de erro de uma previsão com base no que foi previsto e no que seria a verdadeira classe. Já a acurácia calcula a proporção entre instâncias corretamentes classificadas em relação ao total de instâncias avaliadas, utilizando a fórmula abaixo.
 
 Acurácia = (TP + TN) / (TP + TN + FP + FN)
 
-em que TP (true positive) e TN (true negative) representam as previsões corretas, enquanto FP (false positive) e FN (false negative) correspondem às classificações incorretas.
+Em que: TP (true positive) e TN (true negative) representam as previsões corretas, enquanto FP (false positive) e FN (false negative) correspondem às classificações incorretas.
 
 ```{r}
 # -------------------- Árvore de Decisão --------------------
@@ -565,7 +566,7 @@ glass_df <- glass_df %>%
 
 ### Estratégia da Divisão da Base de Dados
 
-Adotou-se a estratégia de divisão Holdout para a separação dos dados em treino e teste. Essa técnica consiste em particionar a base em dois subconjuntos mutuamente exclusivos: um destinado ao treinamento do modelo e outro reservado para a sua avaliação. Optou-se por utilizar aproximadamente 2/3 dos dados para o treino e 1/3 para o teste, de modo a garantir que o classificador tivesse acesso a uma quantidade suficiente de instâncias para o aprendizado, ao mesmo tempo em que fosse avaliado em exemplos não vistos durante o treinamento. Essa abordagem permite estimar o desempenho do modelo de forma direta e eficiente, sendo amplamente utilizada em cenários com bases de dados de tamanho moderado.
+Para a separação do dataset entre dados de treino e de teste, utilizou-se a técnica Holdout, que consiste em fazer uma única partição da amostra em 3 partes, sendo 2/3 para treino e 1/3 para teste.
 
 ```{r}
 set.seed(42)  # Reprodutibilidade
@@ -579,7 +580,7 @@ idx_treino_glass <- glass_df %>%
 
 ### Normalização
 
-No processo de pré-processamento dos dados, adotou-se a normalização das variáveis preditoras, etapa fundamental para a execução de algoritmos de classificação baseados em medidas de distância e em modelos estatísticos multivariados. Foram utilizadas duas abordagens distintas conforme a necessidade de cada algoritmo: a normalização por re-escala e a padronização. A normalização por re-escala transforma os atributos para um intervalo comum, tipicamente \[0, 1\], evitando que variáveis com grande amplitude numérica dominem o cálculo das distâncias, como ocorre no KNN. Já a padronização converte cada atributo para média zero e desvio-padrão unitário, garantindo comparabilidade em algoritmos como a regressão logística, que assumem variáveis centradas e na mesma escala. Dessa forma, a aplicação dessas técnicas assegurou que todos os atributos contribuíssem de forma equilibrada no processo de classificação, aumentando a robustez e a interpretabilidade dos resultados obtidos.
+Analisando o dataset, é visível que ele possui instâncias com grande amplitude numérica, o que é ruim para algoritmos como KNN e Regressão Logística (que foram escolhidos para a realização deste trabalho). Sendo assim, foi necessária a normalização dos dados para que, conforme a necessidade de cada algoritmo, pudesse ter um melhor resultado. No caso do KNN, a normalização escolhida foi a re-escalar, que transforma os dados em um intervalo \[0, 1\], facilitando o cálculo das distâncias. Já para a Regressão Logística, escolheu-se a padronização, que converte os dados para uma média zero e desvio padrão 1, equilibrando as variáveis e facilitando a interpretação dos coeficientes.
 
 #### Re-escalar
 
@@ -684,7 +685,7 @@ train_rl_glass <- glass_df_pad[idx_treino_glass, ]
 test_rl_glass <- glass_df_pad[-idx_treino_glass, ]
  
  
-model <- multinom(Class ~ RI + Na + Mg + Al + Si + K + Ca + Ba + Fe, data = train_rl_glass)
+model <- multinom(Class ~ RI + Na + Mg + Al + Si + K + Ca + Ba + Fe, data = train_rl_glass, trace = FALSE)
 coefs <- summary(model)$coefficients # pesos atribuidos a cada atributo de acordo com a classe
 prediction_rl_glass <- predict(model, newdata = test_rl_glass)
 ```
@@ -707,18 +708,18 @@ important_vars_sorted <- important_vars[order(-important_vars$MaxValue), ]
 # Mostrar as variáveis mais importantes
 head(important_vars_sorted)
  
-model_less_att <- multinom(Class ~ Mg + Al + K, data = train_rl_glass)
+model_less_att <- multinom(Class ~ Mg + Al + K, data = train_rl_glass, trace = FALSE)
 coefs_less_att <- summary(model_less_att)$coefficients # pesos atribuidos a cada atributo de acordo com a classe
 prediction_rl_glass_less_att <- predict(model_less_att, newdata = test_rl_glass)
 ```
 
 ## Medidas de Avaliação
 
-Para a avaliação dos classificadores, foram utilizadas duas medidas principais: a matriz de confusão e a acurácia. A matriz de confusão consiste em uma tabela que organiza as previsões do modelo em relação aos valores reais, discriminando corretamente os acertos e os erros de classificação para cada classe. A acurácia, por sua vez, expressa a proporção de instâncias corretamente classificadas pelo modelo em relação ao total de instâncias avaliadas, sendo calculada pela fórmula:
+Para realizar a avaliação dos classificadores, utilizou-se duas medidas principais: a matriz de confusão e a acurácia. A matriz de confusão é uma tabela usada para distinguir os tipos de erro de uma previsão com base no que foi previsto e no que seria a verdadeira classe. Já a acurácia calcula a proporção entre instâncias corretamentes classificadas em relação ao total de instâncias avaliadas, utilizando a fórmula abaixo.
 
 Acurácia = (TP + TN) / (TP + TN + FP + FN)
 
-em que TP (true positive) e TN (true negative) representam as previsões corretas, enquanto FP (false positive) e FN (false negative) correspondem às classificações incorretas.
+Em que: TP (true positive) e TN (true negative) representam as previsões corretas, enquanto FP (false positive) e FN (false negative) correspondem às classificações incorretas.
 
 ```{r}
 # -------------------- Árvore de Decisão --------------------
@@ -819,11 +820,11 @@ ggplot(cm_beans, aes(x = Reference, y = Prediction, fill = Freq)) +
 
 ```
 
-No Dry Beans, observou-se que a Regressão Logística apresentou o melhor desempenho em termos de acurácia, seguida pelo KNN e, por último, pela Árvore de Decisão. Esse resultado pode ser explicado pela natureza dos atributos do conjunto: as variáveis correspondem a medidas geométricas e fatores de forma já derivados, muitos deles fortemente correlacionados e próximos de uma relação linear com as classes. A regressão logística, por ser um modelo paramétrico, consegue explorar bem essas relações globais quando há grande quantidade de dados, além de se beneficiar da padronização aplicada no pré-processamento, o que favorece a convergência do modelo.
+Através da análise dos avaliadores, observa-se o melhor desempenho da regressão logística em termos de acurácia, seguida pelo KNN e posteriormente pela árvore de decisão. Esse resultado se dá pela natureza dos atributos da base escolhida, dado que correspndem à medidas geométrica e fatores já derivados, com grande correlação entre os dados e próximos de uma relação linear com as classes. Por ser um modelo paramétrico, a regressão logística consegue explorar bem essas relações globais quando há uma boa quantidade de dados, além de se beneficiar das técnicas de pré processamento aplicadas para potencializar a convergência do modelo
 
 O KNN obteve desempenho intermediário. Isso se deve ao fato de que o algoritmo depende fortemente da proximidade entre instâncias, e no caso de variedades de feijão com características muito semelhantes, os vizinhos podem pertencer a classes diferentes, o que aumenta o número de erros. Ainda assim, o KNN se mostrou competitivo, principalmente porque a normalização min–max aplicada no pré-processamento garantiu que todos os atributos contribuíssem de forma equilibrada no cálculo das distâncias.
 
-A Árvore de Decisão foi o algoritmo com menor desempenho. O motivo principal é que esse classificador tende a criar divisões eixos-paralelas no espaço dos atributos, o que não é suficiente para capturar fronteiras de decisão mais sutis e contínuas, como as que distinguem variedades de feijão. Embora valores menores de *cp* tenham aumentado a complexidade da árvore e melhorado levemente os resultados, o modelo ainda permaneceu inferior aos demais.
+A Árvore de Decisão foi o algoritmo com menor desempenho. Provavelmente isso se dá devido à tendência do classificador em criar divisões bem estabelecidas com base nos atributos, não sendo sensível às fronteiras sutis de decisão como as que distinguem as variedades de feijão. Mesmo com o aumento da complexidade da árvore e o procedente aumento da acurácia, o modelo ainda se manteve inferior.
 
 ## Glass Identification Dataset
 
@@ -866,18 +867,20 @@ ggplot(cm_glasss, aes(x = Reference, y = Prediction, fill = Freq)) +
   )
 ```
 
-No Glass, a ordem de desempenho se inverteu parcialmente: o KNN apresentou a maior acurácia, seguido pela Árvore de Decisão, e por último a Regressão Logística. Esse comportamento está relacionado às características da base, que é pequena (214 instâncias), desbalanceada e com classes muito próximas em termos de composição química.
+Na base de Glass Identification, a ordem de desempenho se inverteu parcialmente: o KNN apresentou a maior acurácia, seguido pela Árvore de Decisão, e por último a Regressão Logística. Esse comportamento está relacionado às características da base, que é pequena (214 instâncias) e com classes muito próximas em termos de composição química. É observável que todos os modelos apresentaram uma acurácia intermediária, apontando uma possível necessidade de re-testagem da base em outros modelos de classificação ou com outras parametrizações.
 
-O KNN apresentou a melhor performance porque o método lida bem com padrões locais, aproveitando a proximidade entre instâncias semelhantes mesmo em um espaço não linear. Em bases pequenas como o Glass, a ausência de suposições paramétricas faz com que o KNN consiga se adaptar melhor a regiões complexas do espaço de atributos, desde que os dados estejam normalizados.
+O melhor desempenho do KNN em relação aos demais se deu pela facilidade do método em lidar com padrões locais, identificando semelhanças entre instâncias mesmo em um espaço não linear. Em bases menores como o Glass Identification, a ausência de informações abre espaço para suposições paramétricas e faz com que o KNN consiga se adaptar melhor a regiões complexas do espaço de atributos, estando esses normalizados.
 
-A Árvore de Decisão obteve desempenho intermediário, superando a Regressão Logística. Isso se deve ao fato de que árvores conseguem capturar interações não lineares entre os atributos químicos, formando divisões que refletem combinações específicas de valores. Contudo, a limitação de profundidade e a sensibilidade a ruídos ainda reduzem seu desempenho em relação ao KNN.
+A árvore de decisão obteve desempenho intermediário em relação aos outros modelos. Isso se deve ao fato de que o método é capaz de identificar interações não lineares entre os atributos químicos, formando divisões que traduzem combinações específica de valores. Apesar disso, a limitação de profundidade devido ao baixo número de instâncias e a sensibilidade a ruídos a deixa numa posição inferior em relação ao KNN.
 
-A Regressão Logística, por sua vez, apresentou o pior desempenho no Glass. A baixa acurácia pode ser atribuída ao tamanho reduzido do conjunto e à natureza das classes: as fronteiras entre tipos de vidro dificilmente são lineares, o que limita a capacidade do modelo de separar adequadamente as categorias. Além disso, o desbalanceamento das classes aumenta a instabilidade dos coeficientes estimados, mesmo após a padronização das variáveis.
+A Regressão Logística, por sua vez, apresentou o pior desempenho no Glass Identification. A baixa acurácia pode ser atribuída ao tamanho reduzido do conjunto e à natureza das classes: as fronteiras entre tipos de vidro dificilmente são lineares, o que limita a capacidade do modelo de separar class de forma ideal. Além disso, mesmo após a padronização das variáveis, o desbalanceamento entre as classes aumenta a instabilidade do modelo e consequentemente afeta as estimativas dos coeficientes.
 
 ## Comparação Geral e Implicações
 
-Os resultados mostram que não existe um único algoritmo superior em todos os contextos; o desempenho depende das características do conjunto de dados. Em bases grandes, com atributos derivados e relações mais próximas da linearidade, como no Dry Beans, a Regressão Logística se mostrou a mais eficaz. Já em bases pequenas e com fronteiras de decisão complexas, como no Glass, métodos não paramétricos (KNN e Árvore) superaram a RL.
+Os resultados mostram que não existe um único algoritmo que seja superior em todos os contextos. É perceptível que o desempenho das classificações depende das características individuais de cada conjunto de dados, assim como o significado de seus atributos que favorecem a interpretação de como esses se correlacionam. A partir disso, cada metodologia de classificação tratará melhor as bases que correspondam à lógica que aplicam em seu algoritmo.
 
-Além disso, o estudo evidencia a importância do pré-processamento: a normalização (re-escala para KNN e padronização para RL) foi essencial para que os algoritmos funcionassem adequadamente, e a redução de dimensionalidade no Dry Beans contribuiu para reduzir redundâncias, melhorando o desempenho dos modelos.
+Tal afirmação se comprova pela discrepância de desempenho dos classificadores nas bases. Observa-se, por exemplo, que as matrizes de confusão da base Dry Beans apresenta uma maior estabilidade e  "nitidez" em comparação ao Glass Identification. Essa medida, unida às acurácias apresentadas ao final, indicam que os classificadores são ideais para bases que se comportam de forma semelhante ao Dry Beans, e possivelmente não seriam recomendáveis para bases como o Glass Identification. Essa dessemelhança também pode estar associada ao tamanho das bases. Em bases grandes, com atributos derivados e relações mais próximas da linearidade, como no Dry Beans, a Regressão Logística se mostrou a mais eficaz. Já em bases pequenas e com fronteiras de decisão complexas, como no Glass, métodos não paramétricos (KNN e Árvore) superaram a RL.
 
-Esses achados estão em consonância com a teoria de aprendizado de máquina: modelos paramétricos tendem a ser favorecidos em conjuntos grandes e bem estruturados, enquanto modelos baseados em vizinhança ou árvores se beneficiam quando o espaço de decisão é mais irregular ou quando há poucos dados disponíveis.
+Ademais, o estudo evidencia a importância do pré-processamento: a normalização (re-escala para KNN e padronização para RL) foi essencial para que os algoritmos funcionassem adequadamente, e a redução de dimensionalidade no Dry Beans contribuiu para reduzir redundâncias, melhorando o desempenho dos modelos.
+
+Com essas conclusões, é evidente a necessidade de conhecimento prévio dos dados presentes na base a ser analisada, assim como o que representam. Destaca-se ainda a importância de uma compreensão clara do objetivo a ser alcançado com os processamentos, para que assim seja possível traçar a relevância dos atributos, o algoritmo a ser utilizado e o resultado que se procura.
